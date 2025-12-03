@@ -1,6 +1,6 @@
 # MCP Content Credentials Server
 
-A professional-grade MCP (Model Context Protocol) server for reading C2PA content credentials from images and media files using `c2patool`.
+MCP (Model Context Protocol) server for reading C2PA content credentials from images and media files using `c2patool`.
 
 ## Features
 
