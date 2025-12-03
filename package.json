@@ -1,0 +1,61 @@
+{
+  "name": "mcp-content-credentials",
+  "version": "1.0.0",
+  "description": "MCP server for reading Content Credentials from images and media files using c2patool",
+  "main": "build/index.js",
+  "type": "module",
+  "bin": {
+    "mcp-content-credentials": "./build/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node build/index.js",
+    "dev": "ts-node --esm src/index.ts",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "type-check": "tsc --noEmit",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "precommit": "npm run lint && npm run format:check && npm run type-check",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "c2pa",
+    "content-credentials",
+    "content-authenticity",
+    "content-provenance",
+    "claude",
+    "ai"
+  ],
+  "author": "Noga Hurwitz",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/noga7/mcp-content-credentials.git"
+  },
+  "bugs": {
+    "url": "https://github.com/noga7/mcp-content-credentials/issues"
+  },
+  "homepage": "https://github.com/noga7/mcp-content-credentials#readme",
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@types/node": "^24.10.1",
+    "@typescript-eslint/eslint-plugin": "^8.48.1",
+    "@typescript-eslint/parser": "^8.48.1",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "prettier": "^3.7.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.24.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
