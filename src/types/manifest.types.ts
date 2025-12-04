@@ -1,5 +1,5 @@
 /**
- * Parsed C2PA manifest data with structured information
+ * Domain types for Content Credentials manifest data
  */
 
 /**
@@ -109,64 +109,3 @@ export interface C2PAResult {
  * Original C2PA manifest type (kept for compatibility)
  */
 export type C2PAManifest = string | Record<string, unknown>;
-
-/**
- * Input parameters for reading credentials from a file
- */
-export interface ReadCredentialsFileParams {
-  filePath: string;
-}
-
-/**
- * Input parameters for reading credentials from a URL
- */
-export interface ReadCredentialsUrlParams {
-  url: string;
-}
-
-/**
- * Custom error types for better error handling
- */
-export class C2PAError extends Error {
-  constructor(
-    message: string,
-    public readonly code: string,
-    public readonly details?: unknown
-  ) {
-    super(message);
-    this.name = 'C2PAError';
-    Object.setPrototypeOf(this, C2PAError.prototype);
-  }
-}
-
-export class FileNotFoundError extends C2PAError {
-  constructor(filePath: string) {
-    super(`File not found: ${filePath}`, 'FILE_NOT_FOUND', { filePath });
-    this.name = 'FileNotFoundError';
-    Object.setPrototypeOf(this, FileNotFoundError.prototype);
-  }
-}
-
-export class InvalidUrlError extends C2PAError {
-  constructor(url: string) {
-    super(`Invalid URL: ${url}`, 'INVALID_URL', { url });
-    this.name = 'InvalidUrlError';
-    Object.setPrototypeOf(this, InvalidUrlError.prototype);
-  }
-}
-
-export class DownloadError extends C2PAError {
-  constructor(url: string, statusCode?: number) {
-    super(`Failed to download file from URL: ${url}`, 'DOWNLOAD_ERROR', { url, statusCode });
-    this.name = 'DownloadError';
-    Object.setPrototypeOf(this, DownloadError.prototype);
-  }
-}
-
-export class C2PToolError extends C2PAError {
-  constructor(message: string, stderr?: string) {
-    super(`c2patool error: ${message}`, 'C2PATOOL_ERROR', { stderr });
-    this.name = 'C2PToolError';
-    Object.setPrototypeOf(this, C2PToolError.prototype);
-  }
-}

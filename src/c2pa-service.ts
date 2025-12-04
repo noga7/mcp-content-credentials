@@ -5,13 +5,13 @@
 
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import type { C2PAResult } from './types.js';
-import { C2PToolError } from './types.js';
+import type { C2PAResult } from './types/index.js';
+import { C2PToolError } from './types/index.js';
 import { createLogger } from './logger.js';
 import { MAX_BUFFER_SIZE, NO_CREDENTIALS_INDICATORS } from './constants.js';
 import { ensureFileExists, downloadFile, safeDelete } from './file-utils.js';
 import { validateFilePath, validateUrl } from './validators.js';
-import { parseManifest } from './manifest-parser.js';
+import { parseManifest } from './parsers/index.js';
 
 const execAsync = promisify(exec);
 const logger = createLogger('c2pa-service');

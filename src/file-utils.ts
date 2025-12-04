@@ -8,7 +8,7 @@ import * as os from 'os';
 import { createWriteStream } from 'fs';
 import { pipeline } from 'stream/promises';
 import { Readable } from 'stream';
-import { DownloadError, FileNotFoundError } from './types.js';
+import { DownloadError, FileNotFoundError } from './types/index.js';
 import { createLogger } from './logger.js';
 import { TEMP_FILE_PREFIX, DOWNLOAD_TIMEOUT_MS } from './constants.js';
 

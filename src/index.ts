@@ -13,7 +13,11 @@ import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprot
 import { createC2PAService } from './c2pa-service.js';
 import { createLogger } from './logger.js';
 import { SERVER_INFO } from './constants.js';
-import type { ReadCredentialsFileParams, ReadCredentialsUrlParams, C2PAResult } from './types.js';
+import type {
+  ReadCredentialsFileParams,
+  ReadCredentialsUrlParams,
+  C2PAResult,
+} from './types/index.js';
 
 const logger = createLogger('mcp-server');
 const c2paService = createC2PAService();
@@ -46,7 +50,7 @@ server.setRequestHandler(ListToolsRequestSchema, () => {
         description:
           'Read Content Credentials from a local file. USE THIS TOOL when the user drops a file or provides a file path AND asks questions like: "who made this", "how was this made", "where does this come from", "is this AI", "is this real", "does this have Content Credentials", "what are the c2pa details", or mentions "c2pa" or "Content Credentials". ' +
           'If the user asks a SPECIFIC question (e.g., "Is this AI?"), answer their question directly using the relevant data, then offer to share more details from the Content Credentials. ' +
-          'If the user asks GENERALLY about the file or its credentials, present the information in this order: 1) Who this comes from (use BULLET POINTS, prioritize LinkedIn verified identities at the top), 2) About this content (actions taken - EXCLUDE "c2pa.opened" actions unless specifically requested), 3) About these Content Credentials (signer and timestamp), 4) Validation info (certificate details).',
+          'If the user asks GENERALLY about the file or its credentials, present the information in this order (SKIP sections that have no data): 1) Who this comes from (use BULLET POINTS, prioritize LinkedIn verified identities at the top - OMIT THIS ENTIRE SECTION if no CAWG or personal identity is found), 2) About this content (actions taken - EXCLUDE "c2pa.opened" actions unless specifically requested), 3) About these Content Credentials (signer and timestamp), 4) Validation info (certificate details).',
         inputSchema: {
           type: 'object',
           properties: {
@@ -63,7 +67,7 @@ server.setRequestHandler(ListToolsRequestSchema, () => {
         description:
           'Read Content Credentials from a file at a URL. USE THIS TOOL when the user provides a URL AND asks questions like: "who made this", "how was this made", "where does this come from", "is this AI", "is this real", "does this have Content Credentials", "what are the c2pa details", or mentions "c2pa" or "Content Credentials". Downloads the file temporarily, checks for embedded C2PA manifests, then cleans up. ' +
           'If the user asks a SPECIFIC question (e.g., "Is this AI?"), answer their question directly using the relevant data, then offer to share more details from the Content Credentials. ' +
-          'If the user asks GENERALLY about the file or its credentials, present the information in this order: 1) Who this comes from (use BULLET POINTS, prioritize LinkedIn verified identities at the top), 2) About this content (actions taken - EXCLUDE "c2pa.opened" actions unless specifically requested), 3) About these Content Credentials (signer and timestamp), 4) Validation info (certificate details).',
+          'If the user asks GENERALLY about the file or its credentials, present the information in this order (SKIP sections that have no data): 1) Who this comes from (use BULLET POINTS, prioritize LinkedIn verified identities at the top - OMIT THIS ENTIRE SECTION if no CAWG or personal identity is found), 2) About this content (actions taken - EXCLUDE "c2pa.opened" actions unless specifically requested), 3) About these Content Credentials (signer and timestamp), 4) Validation info (certificate details).',
         inputSchema: {
           type: 'object',
           properties: {

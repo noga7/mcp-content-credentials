@@ -2,7 +2,7 @@
  * Validation utilities for input parameters
  */
 
-import { InvalidUrlError } from './types.js';
+import { InvalidUrlError } from './types/index.js';
 import { createLogger } from './logger.js';
 
 const logger = createLogger('validators');
