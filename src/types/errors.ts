@@ -51,6 +51,20 @@ export class DownloadError extends C2PAError {
 }
 
 /**
+ * Error thrown when a download times out
+ */
+export class DownloadTimeoutError extends C2PAError {
+  constructor(url: string, timeoutMs: number) {
+    super(`Download timeout after ${timeoutMs}ms for URL: ${url}`, 'DOWNLOAD_TIMEOUT', {
+      url,
+      timeoutMs,
+    });
+    this.name = 'DownloadTimeoutError';
+    Object.setPrototypeOf(this, DownloadTimeoutError.prototype);
+  }
+}
+
+/**
  * Error thrown when c2patool execution fails
  */
 export class C2PToolError extends C2PAError {

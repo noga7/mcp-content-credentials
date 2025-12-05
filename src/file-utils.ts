@@ -8,7 +8,7 @@ import * as os from 'os';
 import { createWriteStream } from 'fs';
 import { pipeline } from 'stream/promises';
 import { Readable } from 'stream';
-import { DownloadError, FileNotFoundError } from './types/index.js';
+import { DownloadError, DownloadTimeoutError, FileNotFoundError } from './types/index.js';
 import { createLogger } from './logger.js';
 import { TEMP_FILE_PREFIX, DOWNLOAD_TIMEOUT_MS } from './constants.js';
 
@@ -81,13 +81,13 @@ export async function downloadFile(url: string): Promise<string> {
   } catch (error) {
     logger.error('File download failed', error, { url });
 
-    if (error instanceof DownloadError) {
+    if (error instanceof DownloadError || error instanceof DownloadTimeoutError) {
       throw error;
     }
 
     // Handle abort/timeout
     if (error instanceof Error && error.name === 'AbortError') {
-      throw new DownloadError(`Download timeout after ${DOWNLOAD_TIMEOUT_MS}ms`);
+      throw new DownloadTimeoutError(url, DOWNLOAD_TIMEOUT_MS);
     }
 
     throw new DownloadError(url);

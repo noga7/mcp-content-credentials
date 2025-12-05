@@ -26,5 +26,6 @@ export {
   FileNotFoundError,
   InvalidUrlError,
   DownloadError,
+  DownloadTimeoutError,
   C2PToolError,
 } from './errors.js';
