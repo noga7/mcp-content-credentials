@@ -58,18 +58,20 @@ server.setRequestHandler(ListToolsRequestSchema, () => {
         name: 'read_credentials_file',
         description:
           "Read Content Credentials from a LOCAL FILE on the USER'S computer at /Users/nhurwitz/. This tool CAN access files on the user's local macOS filesystem. " +
-          'USE THIS TOOL when the user asks about a file, mentions a filename, or asks to check images. ' +
+          'USE THIS TOOL when the user asks about a file, mentions a filename, drops a file, or asks to check images/screenshots. ' +
           "The user's files are located at paths like: /Users/nhurwitz/Desktop/filename.jpg, /Users/nhurwitz/Downloads/image.png, /Users/nhurwitz/Desktop/demo files/photo.jpg. " +
           'When the user mentions a file, ask them for the full path OR construct it from context (e.g., if they say "demo files" assume /Users/nhurwitz/Desktop/demo files/). ' +
-          'This tool reads C2PA manifests and TrustMark watermarks. ' +
-          'Common questions: "who made this", "is this AI", "where does this come from", "check content credentials".',
+          'IMPORTANT: For SCREENSHOTS and images without embedded metadata, this tool automatically checks for TrustMark watermarks (invisible credentials embedded in pixels that survive social media sharing). ' +
+          'Always use this tool when user asks about screenshots or dropped images, even if they seem to lack metadata. ' +
+          'This tool reads both C2PA manifests AND TrustMark watermarks. ' +
+          'Common questions: "who made this", "is this AI", "where does this come from", "check content credentials", "check this screenshot".',
         inputSchema: {
           type: 'object',
           properties: {
             filePath: {
               type: 'string',
               description:
-                "Full path to the file on the user's Mac. Examples: /Users/nhurwitz/Desktop/photo.jpg, /Users/nhurwitz/Downloads/image.png. Can handle spaces in filenames.",
+                "Full path to the file on the user's Mac. Examples: /Users/nhurwitz/Desktop/photo.jpg, /Users/nhurwitz/Downloads/Screenshot.png, /Users/nhurwitz/Desktop/demo files/image.jpg. Can handle spaces in filenames. Works with screenshots!",
             },
           },
           required: ['filePath'],
