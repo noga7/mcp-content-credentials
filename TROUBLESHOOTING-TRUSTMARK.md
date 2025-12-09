@@ -36,16 +36,21 @@ This will show you:
 2. If you must screenshot, use PNG format (lossless)
 3. Ensure the screenshot captures the full image at 100% zoom
 
-### Issue B: TrustMark Model Mismatch
+### Issue B: TrustMark Model Variant
 
-**Problem:** Wrong model type specified when detecting.
+**Problem:** Wrong model variant specified when detecting.
 
-**Current Setting:** Model type 'Q' (default)
+**Current Setting:** Model type 'P' (production/standard - default)
 
-**Try Alternative:**
+The server now uses the **'P' variant** by default, which is the standard TrustMark decoder variant. This matches the command-line usage:
+```bash
+trustmark decode --variant P -i [file_path]
+```
+
+**If you need to try the alternative 'Q' variant:**
 Edit `src/c2pa-service.ts` line 25:
 ```typescript
-private trustMarkService = createTrustMarkService('P')  // Try 'P' instead of 'Q'
+private trustMarkService = createTrustMarkService('Q')  // Try 'Q' variant if needed
 ```
 
 Then rebuild: `npm run build`

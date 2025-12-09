@@ -23,13 +23,13 @@ except ImportError as e:
     sys.exit(1)
 
 
-def detect_watermark(image_path: str, model_type: str = 'Q') -> dict:
+def detect_watermark(image_path: str, model_type: str = 'P') -> dict:
     """
     Detect TrustMark watermark in an image.
     
     Args:
         image_path: Path to the image file
-        model_type: TrustMark model type ('Q' or 'P')
+        model_type: TrustMark model type ('P' for production/standard, 'Q' for alternative)
     
     Returns:
         Dictionary with detection results
@@ -101,7 +101,7 @@ def main():
         sys.exit(1)
     
     image_path = sys.argv[1]
-    model_type = sys.argv[2] if len(sys.argv) > 2 else 'Q'
+    model_type = sys.argv[2] if len(sys.argv) > 2 else 'P'
     
     result = detect_watermark(image_path, model_type)
     print(json.dumps(result, indent=2))

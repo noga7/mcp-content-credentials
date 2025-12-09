@@ -22,7 +22,7 @@ const logger = createLogger('c2pa-service');
  * C2PA Service - Core business logic for credential operations
  */
 export class C2PAService {
-  private trustMarkService = createTrustMarkService();
+  private trustMarkService = createTrustMarkService('P'); // Use 'P' variant for TrustMark decoding
 
   /**
    * Execute c2patool command on a file with detailed output

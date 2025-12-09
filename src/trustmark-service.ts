@@ -30,7 +30,7 @@ const logger = createLogger('trustmark-service');
 export class TrustMarkService {
   private modelType: string;
 
-  constructor(modelType: 'Q' | 'P' = 'Q') {
+  constructor(modelType: 'Q' | 'P' = 'P') {
     this.modelType = modelType;
   }
 
@@ -133,8 +133,8 @@ export class TrustMarkService {
 /**
  * Create a new instance of TrustMarkService
  *
- * @param modelType - TrustMark model type ('Q' for balanced, 'P' for alternative)
+ * @param modelType - TrustMark model type ('P' for production/standard, 'Q' for alternative)
  */
-export function createTrustMarkService(modelType: 'Q' | 'P' = 'Q'): TrustMarkService {
+export function createTrustMarkService(modelType: 'Q' | 'P' = 'P'): TrustMarkService {
   return new TrustMarkService(modelType);
 }
