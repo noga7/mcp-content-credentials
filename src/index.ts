@@ -9,7 +9,12 @@
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+  ListResourcesRequestSchema,
+  ReadResourceRequestSchema,
+} from '@modelcontextprotocol/sdk/types.js';
 import { createC2PAService } from './c2pa-service.js';
 import { createLogger } from './logger.js';
 import { SERVER_INFO } from './constants.js';
@@ -18,6 +23,9 @@ import type {
   ReadCredentialsUrlParams,
   C2PAResult,
 } from './types/index.js';
+import { readdir, stat } from 'fs/promises';
+import { join, resolve } from 'path';
+import os from 'os';
 
 const logger = createLogger('mcp-server');
 const c2paService = createC2PAService();
@@ -33,6 +41,7 @@ const server = new Server(
   {
     capabilities: {
       tools: {},
+      resources: {},
     },
   }
 );
@@ -81,6 +90,134 @@ server.setRequestHandler(ListToolsRequestSchema, () => {
       },
     ],
   };
+});
+
+/**
+ * Helper: Get image files from a directory
+ */
+async function getImageFiles(dirPath: string, maxDepth: number = 1): Promise<string[]> {
+  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.tiff', '.avif', '.heic'];
+  const files: string[] = [];
+
+  async function scan(dir: string, depth: number) {
+    if (depth > maxDepth) return;
+
+    try {
+      const entries = await readdir(dir, { withFileTypes: true });
+
+      for (const entry of entries) {
+        const fullPath = join(dir, entry.name);
+
+        if (entry.isFile()) {
+          const ext = entry.name.toLowerCase().match(/\.[^.]+$/)?.[0];
+          if (ext && imageExtensions.includes(ext)) {
+            files.push(fullPath);
+          }
+        } else if (entry.isDirectory() && depth < maxDepth) {
+          await scan(fullPath, depth + 1);
+        }
+      }
+    } catch {
+      // Ignore permission errors or errors accessing directory
+    }
+  }
+
+  await scan(dirPath, 0);
+  return files.sort();
+}
+
+/**
+ * Handler: List available resources (filesystem access)
+ */
+server.setRequestHandler(ListResourcesRequestSchema, async () => {
+  logger.debug('Received ListResources request');
+
+  const homeDir = os.homedir();
+  const commonDirs = [
+    join(homeDir, 'Desktop'),
+    join(homeDir, 'Downloads'),
+    join(homeDir, 'Documents'),
+    join(homeDir, 'Pictures'),
+  ];
+
+  const resources = [];
+
+  // Add common directories as browsable resources
+  for (const dir of commonDirs) {
+    try {
+      await stat(dir);
+      resources.push({
+        uri: `file://${dir}`,
+        name: `📁 ${dir.split('/').pop()} (${dir})`,
+        description: `Browse images in ${dir}`,
+        mimeType: 'application/x-directory',
+      });
+    } catch {
+      // Directory doesn't exist, skip
+    }
+  }
+
+  return { resources };
+});
+
+/**
+ * Handler: Read a resource (file or directory listing)
+ */
+server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+  const uri = request.params.uri;
+  logger.debug('Received ReadResource request', { uri });
+
+  if (!uri.startsWith('file://')) {
+    throw new Error('Only file:// URIs are supported');
+  }
+
+  const filePath = uri.replace('file://', '');
+  const resolvedPath = resolve(filePath);
+
+  try {
+    const stats = await stat(resolvedPath);
+
+    if (stats.isDirectory()) {
+      // Return list of images in directory
+      const imageFiles = await getImageFiles(resolvedPath, 1);
+
+      const contents = imageFiles
+        .slice(0, 50) // Limit to 50 files
+        .map((file) => `- ${file}`)
+        .join('\n');
+
+      return {
+        contents: [
+          {
+            uri,
+            mimeType: 'text/plain',
+            text: `Images in ${resolvedPath}:\n\n${contents}\n\n${imageFiles.length > 50 ? `(Showing first 50 of ${imageFiles.length} files)` : `(${imageFiles.length} total files)`}\n\nTo check credentials, use read_credentials_file with the full path.`,
+          },
+        ],
+      };
+    } else if (stats.isFile()) {
+      // Check Content Credentials for this file
+      logger.info('Checking credentials for resource', { filePath: resolvedPath });
+      const result = await c2paService.readCredentialsFromFile(resolvedPath);
+
+      return {
+        contents: [
+          {
+            uri,
+            mimeType: 'application/json',
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+      };
+    } else {
+      throw new Error('Resource is neither a file nor a directory');
+    }
+  } catch (error) {
+    logger.error('Failed to read resource', error, { uri });
+    throw new Error(
+      `Failed to read resource: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
+  }
 });
 
 /**
