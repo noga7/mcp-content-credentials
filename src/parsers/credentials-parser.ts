@@ -52,3 +52,4 @@ export function parseAboutTheseCredentials(
 
   return Object.keys(section).length > 0 ? section : undefined;
 }
+

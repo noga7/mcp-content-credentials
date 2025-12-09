@@ -101,3 +101,4 @@ export function parseAboutThisContent(manifestText: string): AboutThisContent | 
 
   return Object.keys(section).length > 0 ? section : undefined;
 }
+

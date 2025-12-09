@@ -1,16 +1,16 @@
 /**
- * Request parameter types for MCP tools
+ * Request parameter types for MCP tool calls
  */
 
 /**
- * Input parameters for reading credentials from a file
+ * Parameters for read_credentials_file tool
  */
 export interface ReadCredentialsFileParams {
   filePath: string;
 }
 
 /**
- * Input parameters for reading credentials from a URL
+ * Parameters for read_credentials_url tool
  */
 export interface ReadCredentialsUrlParams {
   url: string;

@@ -66,3 +66,4 @@ export function parseValidationInfo(manifestText: string): ValidationInfo | unde
 
   return Object.keys(section).length > 0 ? section : undefined;
 }
+

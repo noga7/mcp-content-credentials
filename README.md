@@ -2,37 +2,10 @@
 
 MCP (Model Context Protocol) server for reading C2PA Content Credentials from images and videos. Detects credentials from both embedded manifests and invisible watermarks.
 
-## What It Does
-
-**Reads Content Credentials (C2PA provenance data) from images and videos** to answer questions like "who made this?", "is this AI?", "where did this come from?"
-
-### Detection Methods
-1. **Embedded C2PA manifests** - Reads metadata embedded in files (via `c2patool`)
-2. **TrustMark watermarks** - Detects invisible watermarks in image pixels (via Python TrustMark)
-3. **Smart fallback** - Checks embedded first, then watermark if nothing found
-
-### Input Sources
-- Local files on macOS filesystem (`/Users/you/Desktop/photo.jpg`)
-- URLs (`https://example.com/image.jpg`)
-- Direct filesystem browsing (Desktop, Downloads, Documents, Pictures)
-
-### Supported Formats
-- **Images:** `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`, `.tiff`, `.avif`, `.heic`
-- **Videos:** `.mp4`, `.mov`
-
-### What You Get
-- **Creator identity** (LinkedIn verified, CAWG organizations)
-- **Content history** (edits, AI generation, filters applied)
-- **Signer details** (certificate info, timestamp)
-- **Social credentials** (Instagram, Behance, etc.)
-
----
-
 ## Features
 
 - 🔍 **Embedded C2PA Detection** - Read manifests from file metadata
 - 🌊 **TrustMark Watermark Detection** - Detect credentials in image pixels (survives social media!)
-- 📸 **Screenshot Support** - Automatically checks watermarks in screenshots
 - 🌐 **URL Support** - Check credentials from web URLs
 - 📂 **Direct Filesystem Access** - Claude can browse your directories
 - ⚡ **Smart Detection** - Checks embedded first, watermark as fallback
@@ -98,15 +71,6 @@ npm run install-deps
 "Is this image AI-generated?"
 "Who created /Users/you/Downloads/image.png?"
 ```
-
-### Screenshots and Dropped Files
-
-```
-"Check this screenshot"
-"Does this screenshot have Content Credentials?"
-```
-
-When you drop a screenshot or mention one, the tool automatically checks for TrustMark watermarks - invisible credentials that survive even when metadata is stripped!
 
 ### Browse Directories
 
