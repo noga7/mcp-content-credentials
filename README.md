@@ -6,6 +6,7 @@ MCP (Model Context Protocol) server for reading C2PA content credentials from im
 
 - 🔍 **Read from local files** - Check credentials in files on your computer
 - 🌐 **Read from URLs** - Check credentials in files from the internet
+- 🌊 **TrustMark watermark detection** - Detect Content Credentials embedded via invisible watermarks
 - 📋 **Structured output** - Parses C2PA manifests into human-readable format with clear hierarchy:
   1. **Who this comes from** - LinkedIn verified identities (prioritized), creator names, social handles
   2. **About this content** - Actions taken (created, edited, generated), generative AI details
@@ -20,16 +21,28 @@ MCP (Model Context Protocol) server for reading C2PA content credentials from im
 ## Prerequisites
 
 - Node.js (v18 or higher)
-- `c2patool` command-line tool installed ([c2pa-rs releases](https://github.com/contentauth/c2pa-rs/releases))
 
-To verify `c2patool` is installed:
+**All other dependencies are installed automatically during `npm install`:**
+- ✅ `c2patool` - For embedded C2PA manifests (auto-installed via Homebrew on macOS)
+- ✅ Python TrustMark - For watermark detection (auto-installed via pip)
+
+### Manual Installation (if automatic fails)
+
+**c2patool:**
 ```bash
-c2patool --version
+# macOS
+brew install contentauth/tools/c2patool
+
+# Linux
+# Download from: https://github.com/contentauth/c2pa-rs/releases
+
+# Or use Cargo
+cargo install c2pa-tool
 ```
 
-To install `c2patool` on macOS:
+**TrustMark:**
 ```bash
-brew install contentauth/tools/c2patool
+pip3 install trustmark Pillow
 ```
 
 ## Installation
@@ -40,9 +53,19 @@ git clone <repository-url>
 cd mcp-content-credentials
 ```
 
-2. Install dependencies:
+2. Install all dependencies (automatic):
 ```bash
 npm install
+```
+
+**That's it!** `npm install` automatically installs:
+- ✅ Node.js dependencies
+- ✅ c2patool (via Homebrew on macOS, binary download on Linux)
+- ✅ Python TrustMark (via pip)
+
+If automatic installation fails, see manual installation instructions in the Prerequisites section above, or run:
+```bash
+npm run install-deps
 ```
 
 3. Build the project:
@@ -230,6 +253,15 @@ All tool responses follow this structure with a clear information hierarchy:
     
     rawManifest?: string;        // Full detailed manifest text
   };
+  
+  // TrustMark watermark data (if detected)
+  trustMarkData?: {
+    identifier: string;          // Decoded watermark identifier
+    schema: string;              // Encoding schema (BCH_SUPER, BCH_5, BCH_4, BCH_3)
+    raw: string;                 // Raw 100-bit payload
+    manifestUrl?: string;        // Optional URL to fetch manifest
+  };
+  
   error?: string;                // Error message (if failed)
   rawOutput?: string;            // Raw output from c2patool for debugging
 }
@@ -256,18 +288,26 @@ npm run precommit     # Run all checks (lint, format, type-check)
 ```
 mcp-content-credentials/
 ├── src/
-│   ├── index.ts            # MCP server entry point
-│   ├── c2pa-service.ts     # Business logic
-│   ├── manifest-parser.ts  # C2PA manifest parser
-│   ├── file-utils.ts       # File operations
-│   ├── validators.ts       # Input validation
-│   ├── logger.ts           # Logging utility
-│   ├── types.ts            # TypeScript types & errors
-│   └── constants.ts        # Configuration constants
-├── build/                  # Compiled output
-├── ARCHITECTURE.md         # Architecture documentation
-├── CONTRIBUTING.md         # Contributing guidelines
-└── README.md               # This file
+│   ├── index.ts               # MCP server entry point
+│   ├── c2pa-service.ts        # Business logic
+│   ├── trustmark-service.ts   # TrustMark watermark detection
+│   ├── manifest-parser.ts     # C2PA manifest parser
+│   ├── file-utils.ts          # File operations
+│   ├── validators.ts          # Input validation
+│   ├── logger.ts              # Logging utility
+│   ├── types.ts               # TypeScript types & errors
+│   ├── constants.ts           # Configuration constants
+│   └── parsers/               # Specialized parsers
+│       ├── identity-parser.ts
+│       ├── content-parser.ts
+│       ├── credentials-parser.ts
+│       ├── validation-parser.ts
+│       └── trustmark-parser.ts
+├── build/                     # Compiled output
+├── ARCHITECTURE.md            # Architecture documentation
+├── CONTRIBUTING.md            # Contributing guidelines
+├── TRUSTMARK.md               # TrustMark integration guide
+└── README.md                  # This file
 ```
 
 ## How It Works
@@ -275,17 +315,26 @@ mcp-content-credentials/
 ### Local File Flow
 1. User provides a local file path
 2. Server validates the path and checks file exists
-3. Runs `c2patool --detailed` to extract C2PA manifest
-4. Parses manifest into structured data (certificate, timestamp, CAWG assertions, etc.)
-5. Returns structured data with human-readable information
+3. Runs `c2patool --detailed` to extract embedded C2PA manifest
+4. Checks for TrustMark watermarks in the image pixels
+5. Parses manifest into structured data (certificate, timestamp, CAWG assertions, etc.)
+6. Combines embedded and watermark-based credentials
+7. Returns comprehensive structured data
 
 ### URL Flow
 1. User provides a URL
 2. Server validates URL and downloads file to temp location
 3. Runs `c2patool --detailed` on temporary file
-4. Parses manifest into structured data
-5. Returns structured data with human-readable information
-6. Cleans up temporary file
+4. Checks for TrustMark watermarks
+5. Parses manifest into structured data
+6. Combines all credential sources
+7. Returns structured data with human-readable information
+8. Cleans up temporary file
+
+### TrustMark Watermark Detection
+TrustMark is an invisible watermarking technology that embeds Content Credentials directly into image pixels. Unlike metadata, watermarks persist even when files are shared on social media or otherwise modified.
+
+For more information about TrustMark integration, see [TRUSTMARK.md](TRUSTMARK.md).
 
 ## Troubleshooting
 

@@ -15,6 +15,8 @@ export type {
   ParsedManifestData,
   C2PAResult,
   C2PAManifest,
+  TrustMarkWatermarkData,
+  TrustMarkResult,
 } from './manifest.types.js';
 
 // Request types

@@ -1,6 +1,7 @@
 /**
  * Service layer for C2PA credential operations
  * Handles all business logic for reading and processing C2PA manifests
+ * and TrustMark watermarks
  */
 
 import { exec } from 'child_process';
@@ -12,6 +13,7 @@ import { MAX_BUFFER_SIZE, NO_CREDENTIALS_INDICATORS } from './constants.js';
 import { ensureFileExists, downloadFile, safeDelete } from './file-utils.js';
 import { validateFilePath, validateUrl } from './validators.js';
 import { parseManifest } from './parsers/index.js';
+import { createTrustMarkService } from './trustmark-service.js';
 
 const execAsync = promisify(exec);
 const logger = createLogger('c2pa-service');
@@ -20,6 +22,8 @@ const logger = createLogger('c2pa-service');
  * C2PA Service - Core business logic for credential operations
  */
 export class C2PAService {
+  private trustMarkService = createTrustMarkService();
+
   /**
    * Execute c2patool command on a file with detailed output
    */
@@ -68,7 +72,7 @@ export class C2PAService {
   /**
    * Parse c2patool output into structured result
    */
-  private parseC2PAOutput(stdout: string, stderr: string): C2PAResult {
+  private parseC2PAOutput(stdout: string, stderr: string): Omit<C2PAResult, 'trustMarkData'> {
     const output = stdout.trim();
     const errorOutput = stderr.trim();
 
@@ -106,6 +110,7 @@ export class C2PAService {
 
   /**
    * Read Content Credentials from a local file
+   * Checks embedded C2PA manifests first, then TrustMark watermarks if needed
    */
   async readCredentialsFromFile(filePath: string): Promise<C2PAResult> {
     logger.info('Reading credentials from file', { filePath });
@@ -117,11 +122,41 @@ export class C2PAService {
       // Check file exists
       await ensureFileExists(filePath);
 
-      // Execute c2patool
+      // Step 1: Execute c2patool to check for embedded credentials
+      logger.info('Checking for embedded C2PA manifest');
       const { stdout, stderr } = await this.executeC2PATool(filePath);
 
-      // Parse and return result
-      return this.parseC2PAOutput(stdout, stderr);
+      // Parse C2PA output
+      const c2paResult = this.parseC2PAOutput(stdout, stderr);
+
+      // If embedded credentials found, return immediately
+      if (c2paResult.hasCredentials) {
+        logger.info('Embedded C2PA credentials found, skipping watermark check');
+        return c2paResult;
+      }
+
+      // Step 2: No embedded credentials found, check for TrustMark watermark
+      logger.info('No embedded C2PA found, checking for TrustMark watermark');
+      const trustMarkResult = await this.trustMarkService.detectWatermark(filePath);
+
+      // If watermark found, return with watermark data
+      if (trustMarkResult.hasWatermark && trustMarkResult.watermarkData) {
+        logger.info('TrustMark watermark found');
+        return {
+          success: true,
+          hasCredentials: true,
+          trustMarkData: trustMarkResult.watermarkData,
+          ...(c2paResult.rawOutput && { rawOutput: c2paResult.rawOutput }),
+        };
+      }
+
+      // Step 3: Neither embedded credentials nor watermark found
+      logger.info('No Content Credentials found (neither embedded nor watermark)');
+      return {
+        success: true,
+        hasCredentials: false,
+        ...(c2paResult.rawOutput && { rawOutput: c2paResult.rawOutput }),
+      };
     } catch (error: unknown) {
       logger.error('Failed to read credentials from file', error, { filePath });
 

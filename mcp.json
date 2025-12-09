@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "content-credentials": {
+      "command": "node",
+      "args": ["/Users/nhurwitz/mcp-content-credentials/build/index.js"]
+    }
+  }
+}
+
+
+
+
+
+
+
