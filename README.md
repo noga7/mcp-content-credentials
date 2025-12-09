@@ -7,7 +7,6 @@ MCP (Model Context Protocol) server for reading C2PA Content Credentials from im
 - 🔍 **Embedded C2PA Detection** - Read manifests from file metadata
 - 🌊 **TrustMark Watermark Detection** - Detect credentials in image pixels (survives social media!)
 - 📸 **Screenshot Support** - Automatically checks watermarks in screenshots
-- 📤 **Uploaded File Support** - Works with files dropped directly into Claude chat
 - 🌐 **URL Support** - Check credentials from web URLs
 - 📂 **Direct Filesystem Access** - Claude can browse your directories
 - ⚡ **Smart Detection** - Checks embedded first, watermark as fallback
@@ -73,18 +72,6 @@ npm run install-deps
 "Is this image AI-generated?"
 "Who created /Users/you/Downloads/image.png?"
 ```
-
-### Uploaded Files (Drag & Drop)
-
-**Simply drag and drop an image into Claude Desktop, then ask:**
-
-```
-"Check this image for Content Credentials"
-"Who made this?"
-"Is this AI-generated?"
-```
-
-The tool automatically works with uploaded files - no need to save them to disk first!
 
 ### Screenshots and Dropped Files
 
