@@ -188,8 +188,8 @@ Read C2PA content credentials from a file at a URL. The server downloads the fil
 ## Supported File Types
 
 The server supports any file type that `c2patool` can read:
-- **Images:** JPEG, PNG, WebP, GIF, TIFF, AVIF
-- **Video:** MP4
+- **Images:** JPEG, PNG, WebP, GIF, TIFF, AVIF, HEIC
+- **Video:** MP4, MOV
 - And more...
 
 ## Response Format

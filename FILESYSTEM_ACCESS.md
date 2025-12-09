@@ -136,6 +136,11 @@ The server automatically exposes:
 - AVIF
 - HEIC
 
+### **Supported Video Formats**
+
+- MP4
+- MOV
+
 ### **MCP Resources**
 
 The server now implements:

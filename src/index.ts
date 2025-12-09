@@ -96,7 +96,18 @@ server.setRequestHandler(ListToolsRequestSchema, () => {
  * Helper: Get image files from a directory
  */
 async function getImageFiles(dirPath: string, maxDepth: number = 1): Promise<string[]> {
-  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.tiff', '.avif', '.heic'];
+  const mediaExtensions = [
+    '.jpg',
+    '.jpeg',
+    '.png',
+    '.gif',
+    '.webp',
+    '.tiff',
+    '.avif',
+    '.heic',
+    '.mp4',
+    '.mov',
+  ];
   const files: string[] = [];
 
   async function scan(dir: string, depth: number) {
@@ -110,7 +121,7 @@ async function getImageFiles(dirPath: string, maxDepth: number = 1): Promise<str
 
         if (entry.isFile()) {
           const ext = entry.name.toLowerCase().match(/\.[^.]+$/)?.[0];
-          if (ext && imageExtensions.includes(ext)) {
+          if (ext && mediaExtensions.includes(ext)) {
             files.push(fullPath);
           }
         } else if (entry.isDirectory() && depth < maxDepth) {
@@ -149,7 +160,7 @@ server.setRequestHandler(ListResourcesRequestSchema, async () => {
       resources.push({
         uri: `file://${dir}`,
         name: `📁 ${dir.split('/').pop()} (${dir})`,
-        description: `Browse images in ${dir}`,
+        description: `Browse images and videos in ${dir}`,
         mimeType: 'application/x-directory',
       });
     } catch {
@@ -191,7 +202,7 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
           {
             uri,
             mimeType: 'text/plain',
-            text: `Images in ${resolvedPath}:\n\n${contents}\n\n${imageFiles.length > 50 ? `(Showing first 50 of ${imageFiles.length} files)` : `(${imageFiles.length} total files)`}\n\nTo check credentials, use read_credentials_file with the full path.`,
+            text: `Images and videos in ${resolvedPath}:\n\n${contents}\n\n${imageFiles.length > 50 ? `(Showing first 50 of ${imageFiles.length} files)` : `(${imageFiles.length} total files)`}\n\nTo check credentials, use read_credentials_file with the full path.`,
           },
         ],
       };
