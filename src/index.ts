@@ -65,7 +65,8 @@ server.setRequestHandler(ListToolsRequestSchema, () => {
           properties: {
             filePath: {
               type: 'string',
-              description: 'Absolute or relative path to the file to check for Content Credentials',
+              description:
+                'Absolute or relative path to the file to check for Content Credentials. Supports all filesystem characters including periods, numbers, dashes, underscores, and spaces. Examples: /path/to/file-name.jpg, /mnt/data/image 2.png, ./my-file.2024-01.jpg',
             },
           },
           required: ['filePath'],

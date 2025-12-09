@@ -108,3 +108,5 @@ export function parseWhoThisComesFrom(manifestText: string): WhoThisComesFrom | 
   return Object.keys(section).length > 0 ? section : undefined;
 }
 
+
+

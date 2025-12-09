@@ -43,11 +43,22 @@ export function validateUrl(urlString: string): URL {
 
 /**
  * Validate that a file path is provided and is a string
+ * 
+ * Supports all standard filesystem characters including:
+ * - Alphanumeric characters (a-z, A-Z, 0-9)
+ * - Periods (.)
+ * - Dashes (-)
+ * - Underscores (_)
+ * - Spaces ( )
+ * - Forward slashes (/)
+ * - And any other valid filesystem characters
+ * 
+ * Only restriction: No null bytes (\0)
  */
 export function validateFilePath(filePath: string): void {
   validateNonEmpty(filePath, 'filePath');
 
-  // Basic path validation - check for null bytes
+  // Basic path validation - check for null bytes (only invalid character)
   if (filePath.includes('\0')) {
     const error = new Error('File path contains invalid characters');
     logger.error('File path validation failed', error, { filePath });
