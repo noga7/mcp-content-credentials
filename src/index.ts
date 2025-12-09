@@ -57,12 +57,12 @@ server.setRequestHandler(ListToolsRequestSchema, () => {
       {
         name: 'read_credentials_file',
         description:
-          "Read Content Credentials from a LOCAL FILE on the USER'S computer at /Users/nhurwitz/. This tool CAN access files on the user's local macOS filesystem. " +
-          'USE THIS TOOL when the user asks about a file, mentions a filename, drops a file, or asks to check images/screenshots. ' +
-          "The user's files are located at paths like: /Users/nhurwitz/Desktop/filename.jpg, /Users/nhurwitz/Downloads/image.png, /Users/nhurwitz/Desktop/demo files/photo.jpg. " +
-          'When the user mentions a file, ask them for the full path OR construct it from context (e.g., if they say "demo files" assume /Users/nhurwitz/Desktop/demo files/). ' +
+          'Read Content Credentials from an image or video file. ' +
+          '**IMPORTANT: This tool works with BOTH uploaded files AND filesystem paths!** ' +
+          'When the user uploads/drops an image into the chat, you can see it. To check its credentials, pass the file data to this tool. ' +
+          'For files on disk, use the filePath parameter with paths like /Users/nhurwitz/Desktop/photo.jpg. ' +
+          'For UPLOADED files that the user drops into chat, extract the image data and pass it as base64 in the fileData parameter. ' +
           'IMPORTANT: For SCREENSHOTS and images without embedded metadata, this tool automatically checks for TrustMark watermarks (invisible credentials embedded in pixels that survive social media sharing). ' +
-          'Always use this tool when user asks about screenshots or dropped images, even if they seem to lack metadata. ' +
           'This tool reads both C2PA manifests AND TrustMark watermarks. ' +
           'Common questions: "who made this", "is this AI", "where does this come from", "check content credentials", "check this screenshot".',
         inputSchema: {
@@ -71,10 +71,20 @@ server.setRequestHandler(ListToolsRequestSchema, () => {
             filePath: {
               type: 'string',
               description:
-                "Full path to the file on the user's Mac. Examples: /Users/nhurwitz/Desktop/photo.jpg, /Users/nhurwitz/Downloads/Screenshot.png, /Users/nhurwitz/Desktop/demo files/image.jpg. Can handle spaces in filenames. Works with screenshots!",
+                "Path to a file on the user's computer. Examples: /Users/nhurwitz/Desktop/photo.jpg, ~/Downloads/image.png. Optional if fileData is provided.",
+            },
+            fileData: {
+              type: 'string',
+              description:
+                'Base64-encoded image/video data. Use this for files uploaded to the chat. Optional if filePath is provided.',
+            },
+            fileName: {
+              type: 'string',
+              description:
+                'Original filename (e.g., "photo.jpg"). Required when using fileData to determine file type.',
             },
           },
-          required: ['filePath'],
+          required: [],
         },
       },
       {
@@ -255,24 +265,63 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   try {
     switch (name) {
       case 'read_credentials_file': {
-        const params = args as Partial<ReadCredentialsFileParams>;
-        const { filePath } = params;
+        const params = args as Partial<
+          ReadCredentialsFileParams & { fileData?: string; fileName?: string }
+        >;
+        let { filePath } = params;
+        const { fileData, fileName } = params;
+        let tempFilePath: string | null = null;
 
-        if (!filePath) {
-          throw new Error('Missing required parameter: filePath');
+        try {
+          // Handle base64 file data (uploaded files)
+          if (fileData && fileName) {
+            logger.debug('Processing uploaded file data', { fileName });
+
+            // Create temp file
+            const { tmpdir } = await import('os');
+            const { writeFile } = await import('fs/promises');
+            const { randomBytes } = await import('crypto');
+
+            const tempDir = tmpdir();
+            const randomName = randomBytes(16).toString('hex');
+            const ext = fileName.match(/\.[^.]+$/)?.[0] || '.tmp';
+            tempFilePath = join(tempDir, `mcp-upload-${randomName}${ext}`);
+
+            // Decode and write base64 data
+            const buffer = Buffer.from(fileData, 'base64');
+            await writeFile(tempFilePath, buffer);
+
+            filePath = tempFilePath;
+            logger.debug('Created temp file for upload', { tempFilePath, size: buffer.length });
+          }
+
+          if (!filePath) {
+            throw new Error('Missing required parameter: filePath or fileData + fileName');
+          }
+
+          logger.debug('Processing read_credentials_file', { filePath });
+          const result = await c2paService.readCredentialsFromFile(filePath);
+
+          return {
+            content: [
+              {
+                type: 'text',
+                text: formatResult(result),
+              },
+            ],
+          };
+        } finally {
+          // Clean up temp file if created
+          if (tempFilePath) {
+            try {
+              const { unlink } = await import('fs/promises');
+              await unlink(tempFilePath);
+              logger.debug('Cleaned up temp file', { tempFilePath });
+            } catch (err) {
+              logger.warn('Failed to clean up temp file', { error: err, tempFilePath });
+            }
+          }
         }
-
-        logger.debug('Processing read_credentials_file', { filePath });
-        const result = await c2paService.readCredentialsFromFile(filePath);
-
-        return {
-          content: [
-            {
-              type: 'text',
-              text: formatResult(result),
-            },
-          ],
-        };
       }
 
       case 'read_credentials_url': {
