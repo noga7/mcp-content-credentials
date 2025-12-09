@@ -139,6 +139,18 @@ export class C2PAService {
       logger.info('No embedded C2PA found, checking for TrustMark watermark');
       const trustMarkResult = await this.trustMarkService.detectWatermark(filePath);
 
+      // Log TrustMark detection result for debugging
+      logger.debug('TrustMark detection result', {
+        success: trustMarkResult.success,
+        hasWatermark: trustMarkResult.hasWatermark,
+        hasError: !!trustMarkResult.error,
+      });
+
+      // If TrustMark detection failed, log the error but continue
+      if (!trustMarkResult.success && trustMarkResult.error) {
+        logger.warn('TrustMark detection failed', { error: trustMarkResult.error });
+      }
+
       // If watermark found, return with watermark data
       if (trustMarkResult.hasWatermark && trustMarkResult.watermarkData) {
         logger.info('TrustMark watermark found');

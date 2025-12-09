@@ -26,6 +26,7 @@ import type {
 import { readdir, stat } from 'fs/promises';
 import { join, resolve } from 'path';
 import os from 'os';
+import { formatTrustMarkData } from './parsers/trustmark-parser.js';
 
 const logger = createLogger('mcp-server');
 const c2paService = createC2PAService();
@@ -236,6 +237,15 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
  * Format a C2PA result for MCP response
  */
 function formatResult(result: C2PAResult): string {
+  // If we have TrustMark data, format it in a user-friendly way
+  if (result.success && result.hasCredentials && result.trustMarkData) {
+    const formattedTrustMark = formatTrustMarkData(result.trustMarkData);
+    
+    // Return formatted text along with raw JSON
+    return `${formattedTrustMark}\n\n=== Raw Data (JSON) ===\n${JSON.stringify(result, null, 2)}`;
+  }
+  
+  // For embedded C2PA or no credentials, return JSON
   return JSON.stringify(result, null, 2);
 }
 
