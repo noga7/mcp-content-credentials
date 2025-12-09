@@ -57,15 +57,19 @@ server.setRequestHandler(ListToolsRequestSchema, () => {
       {
         name: 'read_credentials_file',
         description:
-          'Read Content Credentials from a local file. USE THIS TOOL when the user drops a file or provides a file path AND asks questions like: "who made this", "how was this made", "where does this come from", "is this AI", "is this real", "does this have Content Credentials", "what are the c2pa details", or mentions "c2pa" or "Content Credentials". ' +
-          'If the user asks a SPECIFIC question (e.g., "Is this AI?"), answer their question directly using the relevant data, then offer to share more details from the Content Credentials. ' +
-          'If the user asks GENERALLY about the file or its credentials, present the information in this order (SKIP sections that have no data): 1) Who this comes from (use BULLET POINTS, prioritize LinkedIn verified identities at the top - OMIT THIS ENTIRE SECTION if no CAWG or personal identity is found), 2) About this content (actions taken - EXCLUDE "c2pa.opened" actions unless specifically requested), 3) About these Content Credentials (signer and timestamp), 4) Validation info (certificate details).',
+          "Read Content Credentials from a LOCAL FILE on the USER'S computer at /Users/nhurwitz/. This tool CAN access files on the user's local macOS filesystem. " +
+          'USE THIS TOOL when the user asks about a file, mentions a filename, or asks to check images. ' +
+          "The user's files are located at paths like: /Users/nhurwitz/Desktop/filename.jpg, /Users/nhurwitz/Downloads/image.png, /Users/nhurwitz/Desktop/demo files/photo.jpg. " +
+          'When the user mentions a file, ask them for the full path OR construct it from context (e.g., if they say "demo files" assume /Users/nhurwitz/Desktop/demo files/). ' +
+          'This tool reads C2PA manifests and TrustMark watermarks. ' +
+          'Common questions: "who made this", "is this AI", "where does this come from", "check content credentials".',
         inputSchema: {
           type: 'object',
           properties: {
             filePath: {
               type: 'string',
-              description: 'Absolute or relative path to the file to check for Content Credentials',
+              description:
+                "Full path to the file on the user's Mac. Examples: /Users/nhurwitz/Desktop/photo.jpg, /Users/nhurwitz/Downloads/image.png. Can handle spaces in filenames.",
             },
           },
           required: ['filePath'],
