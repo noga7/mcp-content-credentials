@@ -5,14 +5,6 @@
 
 // Manifest types
 export type {
-  LinkedInIdentity,
-  CreatorIdentity,
-  WhoThisComesFrom,
-  ContentAction,
-  AboutThisContent,
-  AboutTheseCredentials,
-  ValidationInfo,
-  ParsedManifestData,
   C2PAResult,
   C2PAManifest,
   TrustMarkWatermarkData,

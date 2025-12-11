@@ -103,12 +103,6 @@ export interface C2PAResult {
 
   /** Error message if operation failed */
   error?: string;
-
-  // Legacy fields - kept for backward compatibility but deprecated
-  /** @deprecated Use manifest instead - Parsed manifest data with structured information */
-  manifestData?: ParsedManifestData;
-  /** @deprecated Use manifest instead - Raw output from c2pa-node for debugging */
-  rawOutput?: string;
 }
 
 /**

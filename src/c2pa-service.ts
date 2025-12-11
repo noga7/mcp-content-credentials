@@ -11,7 +11,6 @@ import { NO_CREDENTIALS_INDICATORS } from './constants.js';
 import { ensureFileExists, downloadFile, safeDelete } from './file-utils.js';
 import { validateFilePath, validateUrl } from './validators.js';
 import { createTrustMarkService } from './trustmark-service.js';
-// import { parseManifest } from './parsers/index.js'; // Commented out - using raw JSON instead
 
 const logger = createLogger('c2pa-service');
 
@@ -208,7 +207,6 @@ export class C2PAService {
       success: true,
       hasCredentials: true,
       manifestData,
-      rawOutput: output,
     };
     */
   }
@@ -266,7 +264,6 @@ export class C2PAService {
           success: true,
           hasCredentials: true,
           trustMarkData: trustMarkResult.watermarkData,
-          ...(c2paResult.rawOutput && { rawOutput: c2paResult.rawOutput }),
         };
       }
 
@@ -275,29 +272,17 @@ export class C2PAService {
       return {
         success: true,
         hasCredentials: false,
-        ...(c2paResult.rawOutput && { rawOutput: c2paResult.rawOutput }),
       };
     } catch (error: unknown) {
       logger.error('Failed to read credentials from file', error, { filePath });
 
       const errorMessage = error instanceof Error ? error.message : 'Failed to read credentials';
-      const errorStderr =
-        error &&
-        typeof error === 'object' &&
-        'stderr' in error &&
-        typeof (error as { stderr?: string }).stderr === 'string'
-          ? (error as { stderr: string }).stderr
-          : undefined;
 
       const result: C2PAResult = {
         success: false,
         hasCredentials: false,
         error: errorMessage,
       };
-
-      if (errorStderr) {
-        result.rawOutput = errorStderr;
-      }
 
       return result;
     }
