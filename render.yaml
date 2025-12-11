@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: mcp-content-credentials
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm run start:mcp
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MCP_PORT
+        value: 3001
+      - key: LOG_LEVEL
+        value: info
+    healthCheckPath: /health

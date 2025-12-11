@@ -10,7 +10,11 @@
   "scripts": {
     "build": "tsc",
     "start": "node build/index.js",
+    "start:api": "node build/rest-api.js",
+    "start:mcp": "node build/mcp-sse.js",
     "dev": "ts-node --esm src/index.ts",
+    "dev:api": "ts-node --esm src/rest-api.ts",
+    "dev:mcp": "ts-node --esm src/mcp-sse.ts",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
     "format": "prettier --write \"src/**/*.ts\"",
@@ -43,8 +47,15 @@
     "url": "https://github.com/noga7/mcp-content-credentials/issues"
   },
   "homepage": "https://github.com/noga7/mcp-content-credentials#readme",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.24.1",
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
     "@types/node": "^24.10.1",
     "@typescript-eslint/eslint-plugin": "^8.48.1",
     "@typescript-eslint/parser": "^8.48.1",
@@ -55,10 +66,8 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   },
-  "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.24.1"
-  },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
   }
 }
