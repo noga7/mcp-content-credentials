@@ -12,6 +12,7 @@ MCP (Model Context Protocol) server for reading C2PA Content Credentials from im
 - 🤖 **Automatic Installation** - Zero configuration setup
 - 📋 **Structured Output** - Human-readable parsed data
 - 🛡️ **Production Ready** - Full error handling and logging
+- 🌐 **REST API** - HTTP endpoints for ChatGPT and web integration
 
 ## Quick Start
 
@@ -38,6 +39,27 @@ npm run build
 }
 
 # 5. Restart Claude Desktop
+
+# Optional: Start REST API for ChatGPT/web access
+npm run start:api
+# Server runs on http://localhost:3000
+```
+
+## REST API (for ChatGPT & Web Apps)
+
+Want to use this with ChatGPT or your own web app? Start the HTTP REST API:
+
+```bash
+npm run start:api
+```
+
+The server runs on `http://localhost:3000`. See [REST-API.md](REST-API.md) for full documentation.
+
+**For ChatGPT:** Use ngrok to expose your local server, or deploy to Render/Railway. See [REST-API.md](REST-API.md) for instructions.
+
+```bash
+# Quick test
+curl "http://localhost:3000/verify-url?url=https://example.com/image.jpg"
 ```
 
 ## Prerequisites

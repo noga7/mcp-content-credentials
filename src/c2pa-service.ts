@@ -214,7 +214,7 @@ export class C2PAService {
   }
 
   /**
-   * Read C2PA credentials from a file
+   * Read Content Credentials from a local file
    * Checks embedded C2PA manifests first, then TrustMark watermarks if needed
    */
   async readCredentialsFromFile(filePath: string): Promise<C2PAResult> {
