@@ -20,7 +20,7 @@ MCP (Model Context Protocol) server for reading C2PA Content Credentials from im
 git clone https://github.com/noga7/mcp-content-credentials.git
 cd mcp-content-credentials
 
-# 2. Install (automatic: installs c2patool + TrustMark)
+# 2. Install (automatic: installs TrustMark)
 npm install
 
 # 3. Build
@@ -46,15 +46,13 @@ npm run build
 - **Python 3.8.5+** (for TrustMark watermarks)
 
 **All other dependencies auto-install during `npm install`:**
-- ✅ c2patool (Homebrew on macOS, binary on Linux)
+- ✅ @contentauth/c2pa-node v0.4.0 (native Node.js library)
 - ✅ TrustMark Python package (via pip)
+- ✅ Content Credentials Verify trust list (automatic)
 
 ### Manual Installation (if auto-install fails)
 
 ```bash
-# c2patool
-brew install contentauth/tools/c2patool  # macOS
-
 # TrustMark
 pip3 install trustmark Pillow
 
@@ -91,15 +89,17 @@ npm run install-deps
 ### Detection Flow
 
 ```
-1. Check Embedded C2PA Manifest (fast: ~150ms)
+1. Load Trust Configuration (on startup)
    ↓
-   Found? → Return immediately ✅
+2. Check Embedded C2PA Manifest (fast: ~50ms)
    ↓
-2. Check TrustMark Watermark (slower: ~600ms)
+   Found? → Validate & Return immediately ✅
+   ↓
+3. Check TrustMark Watermark (slower: ~600ms)
    ↓
    Found? → Return watermark data ✅
    ↓
-3. Neither found → "No Content Credentials found" ❌
+4. Neither found → "No Content Credentials found" ❌
 ```
 
 ### Why This Order?
@@ -107,6 +107,14 @@ npm run install-deps
 - **Performance**: 80% of credentialed images have embedded manifests
 - **Speed**: Skip expensive watermark check when not needed
 - **Completeness**: Still catch stripped metadata via watermarks
+
+### Trust Configuration
+
+Automatically loads the Content Credentials Verify trust list on startup:
+- ✅ Trust anchors from contentcredentials.org
+- ✅ Allowed certificate list (SHA-256 hashes)
+- ✅ Extended Key Usage (EKU) configuration
+- ✅ Same defaults as c2patool for consistent validation
 
 ### TrustMark Watermarks
 
@@ -199,14 +207,6 @@ mcp-content-credentials/
 2. **Use absolute paths**: `/Users/you/...` not `~/...`
 3. **Verify MCP is connected**: Ask "What tools do you have?"
 
-### "c2patool: command not found"
-
-```bash
-brew install contentauth/tools/c2patool  # macOS
-# or
-npm run install-deps
-```
-
 ### "Python or TrustMark not found"
 
 ```bash
@@ -224,7 +224,8 @@ This is normal! The file either:
 
 ## Performance
 
-- **Embedded check**: ~150ms (fast path, 80% of cases)
+- **Trust config load**: ~500ms (on startup, one-time)
+- **Embedded check**: ~50ms (fast path, 80% of cases)
 - **+ Watermark check**: ~600ms (fallback, 20% of cases)
 - **First watermark**: ~30s (downloads ONNX model, one-time)
 
@@ -243,8 +244,9 @@ See [CONTRIBUTING.md](CONTRIBUTING.md)
 ## Resources
 
 - [C2PA Specification](https://c2pa.org/specifications/)
-- [c2patool](https://github.com/contentauth/c2pa-rs)
+- [c2pa-node v2](https://github.com/contentauth/c2pa-node-v2)
 - [TrustMark](https://opensource.contentauthenticity.org/docs/trustmark/)
+- [Content Credentials Verify](https://contentcredentials.org/verify)
 - [MCP Protocol](https://modelcontextprotocol.io)
 
 ## License

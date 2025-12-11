@@ -79,8 +79,8 @@ The MCP Content Credentials Server is designed with clean architecture principle
 **Responsibility**: Core business logic for C2PA operations
 
 **Key Functions:**
-- Execute c2patool commands
-- Parse c2patool output
+- Execute c2pa-node library calls
+- Parse c2pa-node output
 - Read credentials from files
 - Read credentials from URLs
 - Handle errors gracefully
@@ -102,14 +102,14 @@ class C2PAService {
   // Read credentials from URL (downloads temporarily)
   async readCredentialsFromUrl(url: string): Promise<C2PAResult>
   
-  // Execute c2patool (private)
-  private async executeC2PATool(filePath: string): Promise<{stdout, stderr}>
+  // Read C2PA manifest using c2pa-node (private)
+  private async readC2PAManifest(filePath: string, mimeType: string): Promise<any>
   
-  // Parse c2patool output (private)
-  private parseC2PAOutput(stdout: string, stderr: string): C2PAResult
+  // Check if file has embedded credentials (private)
+  private async checkEmbeddedCredentials(filePath: string): Promise<C2PAResult | null>
   
-  // Check if output indicates no credentials (private)
-  private hasNoCredentials(output: string): boolean
+  // Check watermark as fallback (private)
+  private async checkWatermarkCredentials(filePath: string): Promise<C2PAResult>
 }
 ```
 
@@ -214,9 +214,11 @@ validators.validateFilePath()
     ↓
 file-utils.ensureFileExists()
     ↓
-c2paService.executeC2PATool()
+c2paService.checkEmbeddedCredentials()
     ↓
-c2paService.parseC2PAOutput()
+c2pa-node Reader.fromAsset() & reader.json()
+    ↓
+If no embedded, check watermark (TrustMark)
     ↓
 Returns C2PAResult
     ↓
@@ -307,7 +309,7 @@ async readCredentialsFromFile(filePath: string): Promise<C2PAResult> {
 const logger = createLogger('c2pa-service');
 
 logger.info('Reading credentials from file', { filePath });
-logger.error('Failed to execute c2patool', error, { filePath, exitCode });
+logger.error('Failed to read C2PA manifest', error, { filePath });
 ```
 
 ## Testing Strategy (Future)
@@ -315,7 +317,8 @@ logger.error('Failed to execute c2patool', error, { filePath, exitCode });
 ### Unit Tests
 - Test pure functions in isolation
 - Mock file system operations
-- Mock c2patool execution
+- Mock c2pa-node Reader API
+- Test error conditions
 - Test error handling paths
 
 ### Integration Tests
@@ -326,7 +329,8 @@ logger.error('Failed to execute c2patool', error, { filePath, exitCode });
 ### E2E Tests
 - Test full MCP request/response cycle
 - Use test MCP client
-- Test with actual c2patool
+- Test with actual c2pa-node library
+- Use test images with known credentials
 
 ## Performance Considerations
 

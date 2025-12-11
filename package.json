@@ -1,7 +1,7 @@
 {
   "name": "mcp-content-credentials",
   "version": "1.0.0",
-  "description": "MCP server for reading Content Credentials from images and media files using c2patool",
+  "description": "MCP server for reading Content Credentials from images and media files using c2pa-node",
   "main": "build/index.js",
   "type": "module",
   "bin": {
@@ -16,7 +16,9 @@
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\"",
     "type-check": "tsc --noEmit",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "echo \"No unit tests yet. Use: npm run read-file -- <path>\"",
+    "read-file": "node scripts/read-credentials.mjs",
+    "compare": "node scripts/compare-c2pa.mjs",
     "precommit": "npm run lint && npm run format:check && npm run type-check",
     "prepare": "npm run build",
     "postinstall": "node scripts/install-trustmark.cjs",
@@ -56,6 +58,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@contentauth/c2pa-node": "^0.4.0",
     "@modelcontextprotocol/sdk": "^1.24.1"
   },
   "engines": {

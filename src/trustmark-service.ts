@@ -7,7 +7,7 @@
  * TrustMark embeds a unique identifier into image pixels that links to
  * a C2PA manifest, allowing credentials to persist even if metadata is stripped.
  *
- * Implementation: Calls Python TrustMark decoder via subprocess (similar to c2patool)
+ * Implementation: Calls Python TrustMark decoder via subprocess (similar to c2pa-node)
  */
 
 import { exec } from 'child_process';

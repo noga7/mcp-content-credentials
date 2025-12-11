@@ -4,62 +4,151 @@
  * and TrustMark watermarks
  */
 
-import { exec } from 'child_process';
-import { promisify } from 'util';
 import type { C2PAResult } from './types/index.js';
-import { C2PToolError } from './types/index.js';
+import { C2PANodeError } from './types/index.js';
 import { createLogger } from './logger.js';
-import { MAX_BUFFER_SIZE, NO_CREDENTIALS_INDICATORS } from './constants.js';
+import { NO_CREDENTIALS_INDICATORS } from './constants.js';
 import { ensureFileExists, downloadFile, safeDelete } from './file-utils.js';
 import { validateFilePath, validateUrl } from './validators.js';
-import { parseManifest } from './parsers/index.js';
 import { createTrustMarkService } from './trustmark-service.js';
+// import { parseManifest } from './parsers/index.js'; // Commented out - using raw JSON instead
 
-const execAsync = promisify(exec);
 const logger = createLogger('c2pa-service');
+
+// Content Credentials Verify trust configuration URLs
+// These are the same defaults used by c2patool
+const VERIFY_TRUST_ANCHORS = 'https://contentcredentials.org/trust/anchors.pem';
+const VERIFY_ALLOWED_LIST = 'https://contentcredentials.org/trust/allowed.sha256.txt';
+const VERIFY_TRUST_CONFIG = 'https://contentcredentials.org/trust/store.cfg';
 
 /**
  * C2PA Service - Core business logic for credential operations
  */
 export class C2PAService {
   private trustMarkService = createTrustMarkService('P'); // Use 'P' variant for TrustMark decoding
+  private trustConfigPromise: Promise<void>;
+
+  constructor() {
+    // Initialize trust configuration asynchronously
+    this.trustConfigPromise = this.initializeTrustConfig();
+  }
 
   /**
-   * Execute c2patool command on a file with detailed output
+   * Ensure trust configuration has been attempted before reading
    */
-  private async executeC2PATool(filePath: string): Promise<{ stdout: string; stderr: string }> {
-    logger.debug('Executing c2patool with detailed output', { filePath });
+  private async ensureTrustConfigured(): Promise<void> {
+    await this.trustConfigPromise.catch(() => {
+      // Ignore errors - already logged in initializeTrustConfig
+    });
+  }
 
+  /**
+   * Initialize trust configuration using Content Credentials Verify trust list
+   * This uses the same defaults as c2patool
+   */
+  private async initializeTrustConfig(): Promise<void> {
     try {
-      const { stdout, stderr } = await execAsync(`c2patool "${filePath}" --detailed`, {
-        maxBuffer: MAX_BUFFER_SIZE,
+      logger.info('Loading Content Credentials Verify trust configuration...');
+      const { loadTrustConfig, loadVerifyConfig } = await import('@contentauth/c2pa-node');
+
+      // Fetch trust list files
+      const [trustAnchors, allowedList, trustConfig] = await Promise.all([
+        fetch(VERIFY_TRUST_ANCHORS).then(r => r.text()).catch(() => ''),
+        fetch(VERIFY_ALLOWED_LIST).then(r => r.text()).catch(() => ''),
+        fetch(VERIFY_TRUST_CONFIG).then(r => r.text()).catch(() => ''),
+      ]);
+
+      // Load trust configuration
+      const trustConfigObj: any = {
+        verifyTrustList: true,
+      };
+      if (trustAnchors) trustConfigObj.trustAnchors = trustAnchors;
+      if (allowedList) trustConfigObj.allowedList = allowedList;
+      if (trustConfig) trustConfigObj.trustConfig = trustConfig;
+      
+      loadTrustConfig(trustConfigObj);
+
+      // Enable trust verification
+      loadVerifyConfig({
+        verifyTrust: true,
+        verifyAfterReading: true,
+        verifyTimestampTrust: true,
+        verifyAfterSign: true,
+        ocspFetch: false,
+        remoteManifestFetch: true,
+        skipIngredientConflictResolution: false,
+        strictV1Validation: false,
       });
 
-      return { stdout, stderr };
-    } catch (error: unknown) {
-      // c2patool may exit with non-zero code even for "no credentials"
-      // which is not really an error for our purposes
-      if (error && typeof error === 'object' && ('stderr' in error || 'stdout' in error)) {
-        const execError = error as { stdout?: string; stderr?: string };
-        return {
-          stdout: execError.stdout || '',
-          stderr: execError.stderr || '',
-        };
+      logger.info('Trust configuration loaded successfully');
+    } catch (error) {
+      logger.error('Failed to initialize trust configuration', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Execute c2pa-node read on a file with detailed output
+   */
+  private async executeC2PANode(filePath: string): Promise<{ stdout: string; stderr: string }> {
+    logger.debug('Reading C2PA manifest via c2pa-node', { filePath });
+
+    try {
+      // Dynamically import c2pa-node and use the v2 Reader.json() API
+      const c2pa: unknown = await import('@contentauth/c2pa-node');
+
+      // Resolve Reader
+      const mod = c2pa as Record<string, unknown>;
+      const Reader = mod['Reader'] as Record<string, unknown> | undefined;
+      if (!Reader) throw new Error('c2pa-node Reader class not found');
+
+      // Create reader from file using fromAsset with FileAsset structure
+      const fromAsset = Reader['fromAsset'];
+      if (typeof fromAsset !== 'function') {
+        throw new Error('c2pa-node Reader.fromAsset not found');
+      }
+      const reader = await (fromAsset as (asset: { path: string; mimeType?: string }) => Promise<unknown>)({
+        path: filePath,
+        mimeType: this.getMimeType(filePath)
+      });
+
+      // Get detailed JSON via reader.json() (synchronous method)
+      const manifest = (reader as { json: () => unknown }).json();
+
+      if (!manifest) {
+        // Mirror prior behavior for "no credentials"
+        return { stdout: '', stderr: 'No manifest found' };
       }
 
+      // Provide detailed JSON text downstream
+      const stdout = JSON.stringify(manifest, null, 2);
+      return { stdout, stderr: '' };
+    } catch (error: unknown) {
       const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error during c2patool execution';
-      const errorStderr =
-        error &&
-        typeof error === 'object' &&
-        'stderr' in error &&
-        typeof (error as { stderr?: string }).stderr === 'string'
-          ? (error as { stderr: string }).stderr
-          : undefined;
-
-      logger.error('c2patool execution failed', error, { filePath });
-      throw new C2PToolError(errorMessage, errorStderr);
+        error instanceof Error ? error.message : 'Unknown error during c2pa-node read';
+      logger.error('c2pa-node manifest read failed', error, { filePath });
+      throw new C2PANodeError(errorMessage);
     }
+  }
+
+  /**
+   * Get MIME type from file extension
+   */
+  private getMimeType(filePath: string): string {
+    const ext = filePath.toLowerCase().split('.').pop();
+    const mimeTypes: Record<string, string> = {
+      jpg: 'image/jpeg',
+      jpeg: 'image/jpeg',
+      png: 'image/png',
+      gif: 'image/gif',
+      webp: 'image/webp',
+      svg: 'image/svg+xml',
+      mp4: 'video/mp4',
+      mov: 'video/quicktime',
+      avi: 'video/x-msvideo',
+      pdf: 'application/pdf',
+    };
+    return mimeTypes[ext || ''] || 'application/octet-stream';
   }
 
   /**
@@ -70,7 +159,7 @@ export class C2PAService {
   }
 
   /**
-   * Parse c2patool output into structured result
+   * Parse c2pa-node output into structured result
    */
   private parseC2PAOutput(stdout: string, stderr: string): Omit<C2PAResult, 'trustMarkData'> {
     const output = stdout.trim();
@@ -82,37 +171,56 @@ export class C2PAService {
       return {
         success: true,
         hasCredentials: false,
-        rawOutput: output || errorOutput,
       };
     }
 
     // Check if we got meaningful output
     if (!output) {
-      logger.debug('Empty output from c2patool');
+      logger.debug('Empty output from c2pa-node');
       return {
         success: true,
         hasCredentials: false,
-        rawOutput: errorOutput,
       };
     }
 
-    // We have credentials! Parse the detailed manifest
+    // Parse JSON manifest from c2pa-node
+    try {
+      const manifest = JSON.parse(output) as Record<string, unknown>;
+      logger.info('Credentials found in file, returning raw manifest');
+      return {
+        success: true,
+        hasCredentials: true,
+        manifest,
+      };
+    } catch (error) {
+      logger.error('Failed to parse manifest JSON', error);
+      return {
+        success: false,
+        hasCredentials: false,
+        error: 'Failed to parse manifest JSON',
+      };
+    }
+
+    /* Commented out parsing layer - using raw JSON for LLM consumption instead
     logger.info('Credentials found in file, parsing manifest');
     const manifestData = parseManifest(output);
-
     return {
       success: true,
       hasCredentials: true,
       manifestData,
       rawOutput: output,
     };
+    */
   }
 
   /**
-   * Read Content Credentials from a local file
+   * Read C2PA credentials from a file
    * Checks embedded C2PA manifests first, then TrustMark watermarks if needed
    */
   async readCredentialsFromFile(filePath: string): Promise<C2PAResult> {
+    // Ensure trust configuration is loaded before reading
+    await this.ensureTrustConfigured();
+
     logger.info('Reading credentials from file', { filePath });
 
     try {
@@ -122,9 +230,9 @@ export class C2PAService {
       // Check file exists
       await ensureFileExists(filePath);
 
-      // Step 1: Execute c2patool to check for embedded credentials
+      // Step 1: Execute c2pa-node to check for embedded credentials
       logger.info('Checking for embedded C2PA manifest');
-      const { stdout, stderr } = await this.executeC2PATool(filePath);
+      const { stdout, stderr } = await this.executeC2PANode(filePath);
 
       // Parse C2PA output
       const c2paResult = this.parseC2PAOutput(stdout, stderr);

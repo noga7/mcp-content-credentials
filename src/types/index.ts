@@ -29,5 +29,5 @@ export {
   InvalidUrlError,
   DownloadError,
   DownloadTimeoutError,
-  C2PToolError,
+  C2PANodeError,
 } from './errors.js';

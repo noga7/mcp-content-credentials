@@ -3,7 +3,7 @@
  */
 
 /**
- * Maximum buffer size for c2patool output (10MB)
+ * Maximum buffer size for c2pa-node output (10MB)
  */
 export const MAX_BUFFER_SIZE = 10 * 1024 * 1024;
 

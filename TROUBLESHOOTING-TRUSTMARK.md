@@ -182,7 +182,7 @@ If none of these solutions work, provide:
 
 **Detection Flow:**
 1. MCP server receives file path
-2. Checks for embedded C2PA manifest first (via c2patool)
+2. Checks for embedded C2PA manifest first (via c2pa-node)
 3. If no manifest found, checks for TrustMark watermark
 4. Calls Python script: `scripts/trustmark-decode.py`
 5. Python script uses TrustMark library to decode

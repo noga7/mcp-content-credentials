@@ -4,7 +4,7 @@
  * MCP Content Credentials Server
  *
  * This server provides tools for reading Content Credentials from
- * images and media files using the c2patool command-line utility.
+ * images and media files using the c2pa-node library.
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';

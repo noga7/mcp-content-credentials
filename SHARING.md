@@ -180,7 +180,7 @@ After pushing to GitHub:
    
    ## Requirements
    - Node.js 18+
-   - c2patool installed
+   - Python 3.8.5+ (auto-installed dependencies)
    ```
 
 ---

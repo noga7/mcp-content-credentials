@@ -86,7 +86,7 @@ export interface ParsedManifestData {
 }
 
 /**
- * Enhanced C2PA result with parsed manifest data
+ * Enhanced C2PA result with raw manifest JSON
  */
 export interface C2PAResult {
   /** Whether the operation completed successfully */
@@ -95,8 +95,8 @@ export interface C2PAResult {
   /** Whether C2PA credentials were found in the file */
   hasCredentials: boolean;
 
-  /** Parsed manifest data with structured information */
-  manifestData?: ParsedManifestData;
+  /** Raw manifest JSON from c2pa-node Reader.json() */
+  manifest?: Record<string, unknown>;
 
   /** TrustMark watermark data if detected */
   trustMarkData?: TrustMarkWatermarkData;
@@ -104,7 +104,10 @@ export interface C2PAResult {
   /** Error message if operation failed */
   error?: string;
 
-  /** Raw output from c2patool for debugging */
+  // Legacy fields - kept for backward compatibility but deprecated
+  /** @deprecated Use manifest instead - Parsed manifest data with structured information */
+  manifestData?: ParsedManifestData;
+  /** @deprecated Use manifest instead - Raw output from c2pa-node for debugging */
   rawOutput?: string;
 }
 
