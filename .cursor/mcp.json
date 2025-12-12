@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "c2pa-vscode": {
+      "command": "node",
+      "args": [
+        "/Users/gpeacock/.vscode/extensions/gpeacock.c2pa-vscode-0.0.1/dist/mcp-server.js"
+      ]
+    }
+  }
+}

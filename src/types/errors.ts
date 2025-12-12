@@ -65,12 +65,12 @@ export class DownloadTimeoutError extends C2PAError {
 }
 
 /**
- * Error thrown when c2patool execution fails
+ * Error thrown when c2pa-node execution fails
  */
-export class C2PToolError extends C2PAError {
+export class C2PANodeError extends C2PAError {
   constructor(message: string, stderr?: string) {
-    super(`c2patool error: ${message}`, 'C2PATOOL_ERROR', { stderr });
-    this.name = 'C2PToolError';
-    Object.setPrototypeOf(this, C2PToolError.prototype);
+    super(`c2pa-node error: ${message}`, 'C2PA_NODE_ERROR', { stderr });
+    this.name = 'C2PANodeError';
+    Object.setPrototypeOf(this, C2PANodeError.prototype);
   }
 }

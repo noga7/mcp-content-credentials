@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "content-credentials": {
+      "command": "node",
+      "args": ["/absolute/path/to/mcp-content-credentials/build/index.js"]
+    }
+  }
+}   

@@ -2,8 +2,8 @@
 
 /**
  * Post-install script to automatically install dependencies:
- * - c2patool (for embedded C2PA manifests)
  * - Python TrustMark (for watermark detection)
+ * - c2pa-node is installed via npm dependencies
  * 
  * Runs after npm install completes
  */
@@ -38,99 +38,6 @@ function tryCommandSilent(command) {
   } catch (error) {
     return false;
   }
-}
-
-/**
- * Check if c2patool is installed
- */
-function checkC2PATool() {
-  try {
-    const version = execSync('c2patool --version', { encoding: 'utf8', stdio: 'pipe' });
-    console.log(`  ✅ Found c2patool: ${version.trim()}\n`);
-    return true;
-  } catch (error) {
-    return false;
-  }
-}
-
-/**
- * Install c2patool
- */
-function installC2PATool() {
-  const platform = os.platform();
-  
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('  Installing c2patool (C2PA Manifest Reader)');
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-
-  if (checkC2PATool()) {
-    console.log('✅ c2patool already installed!\n');
-    return true;
-  }
-
-  console.log('  c2patool not found. Attempting installation...\n');
-
-  // Try platform-specific installation
-  if (platform === 'darwin') {
-    // macOS - try Homebrew
-    if (tryCommandSilent('which brew')) {
-      console.log('  Found Homebrew, installing c2patool...\n');
-      const success = tryCommand(
-        'brew install contentauth/tools/c2patool',
-        'Installing c2patool via Homebrew'
-      );
-      if (success) return true;
-    } else {
-      console.log('  ℹ️  Homebrew not found\n');
-    }
-  } else if (platform === 'linux') {
-    // Linux - try to download binary
-    console.log('  Downloading c2patool binary for Linux...\n');
-    const arch = os.arch();
-    const archMap = {
-      'x64': 'x86_64',
-      'arm64': 'aarch64'
-    };
-    const linuxArch = archMap[arch] || arch;
-    
-    try {
-      // Get latest release URL
-      const downloadUrl = `https://github.com/contentauth/c2pa-rs/releases/latest/download/c2patool-linux-${linuxArch}`;
-      const installPath = `${os.homedir()}/.local/bin/c2patool`;
-      
-      // Create bin directory if it doesn't exist
-      execSync(`mkdir -p ${os.homedir()}/.local/bin`, { stdio: 'pipe' });
-      
-      // Download and install
-      execSync(`curl -L "${downloadUrl}" -o "${installPath}"`, { stdio: 'inherit' });
-      execSync(`chmod +x "${installPath}"`, { stdio: 'pipe' });
-      
-      console.log(`  ✅ c2patool installed to ${installPath}\n`);
-      console.log(`  ⚠️  Add to PATH: export PATH="$HOME/.local/bin:$PATH"\n`);
-      return true;
-    } catch (error) {
-      console.log('  ❌ Binary download failed\n');
-    }
-  }
-
-  // If we get here, automatic installation failed
-  console.log('⚠️  Could not install c2patool automatically\n');
-  console.log('Manual installation instructions:\n');
-  
-  if (platform === 'darwin') {
-    console.log('  macOS:');
-    console.log('    brew install contentauth/tools/c2patool\n');
-  } else if (platform === 'linux') {
-    console.log('  Linux:');
-    console.log('    Download from: https://github.com/contentauth/c2pa-rs/releases');
-    console.log('    Or use Cargo: cargo install c2pa-tool\n');
-  } else if (platform === 'win32') {
-    console.log('  Windows:');
-    console.log('    Download from: https://github.com/contentauth/c2pa-rs/releases');
-    console.log('    Or use Cargo: cargo install c2pa-tool\n');
-  }
-  
-  return false;
 }
 
 /**
@@ -242,15 +149,10 @@ function main() {
   console.log('  MCP Content Credentials - Dependency Setup');
   console.log('═══════════════════════════════════════════════════════\n');
 
-  let c2patoolSuccess = false;
   let trustmarkSuccess = false;
 
-  // Install c2patool
-  try {
-    c2patoolSuccess = installC2PATool();
-  } catch (error) {
-    console.log('⚠️  c2patool installation error:', error.message, '\n');
-  }
+  // Note: c2pa-node is installed via npm dependencies automatically
+  console.log('  ℹ️  @contentauth/c2pa-node installed via npm dependencies\n');
 
   // Install TrustMark
   try {
@@ -266,11 +168,7 @@ function main() {
 
   console.log('Your MCP server can now detect:\n');
   
-  if (c2patoolSuccess) {
-    console.log('  ✅ Embedded C2PA manifests (via c2patool)');
-  } else {
-    console.log('  ⚠️  Embedded C2PA manifests (c2patool not installed)');
-  }
+  console.log('  ✅ Embedded C2PA manifests (via @contentauth/c2pa-node)');
   
   if (trustmarkSuccess) {
     console.log('  ✅ TrustMark watermarks (via Python TrustMark)');
@@ -280,17 +178,13 @@ function main() {
 
   console.log('');
 
-  if (c2patoolSuccess && trustmarkSuccess) {
+  if (trustmarkSuccess) {
     console.log('🎉 All dependencies installed successfully!\n');
     console.log('Start your server: npm start\n');
-  } else if (c2patoolSuccess || trustmarkSuccess) {
-    console.log('⚠️  Some dependencies installed successfully\n');
-    console.log('The server will work with installed components.');
-    console.log('See above for manual installation instructions.\n');
-    console.log('To retry installation: npm run install-deps\n');
   } else {
-    console.log('⚠️  No dependencies installed automatically\n');
-    console.log('Please install manually (see above instructions).');
+    console.log('⚠️  @contentauth/c2pa-node installed, TrustMark needs manual setup\n');
+    console.log('The server will work for embedded C2PA manifests.');
+    console.log('See above for manual TrustMark installation instructions.\n');
     console.log('To retry installation: npm run install-deps\n');
   }
 

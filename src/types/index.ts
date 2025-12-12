@@ -5,18 +5,12 @@
 
 // Manifest types
 export type {
-  LinkedInIdentity,
-  CreatorIdentity,
-  WhoThisComesFrom,
-  ContentAction,
-  AboutThisContent,
-  AboutTheseCredentials,
-  ValidationInfo,
-  ParsedManifestData,
   C2PAResult,
   C2PAManifest,
   TrustMarkWatermarkData,
   TrustMarkResult,
+  SignAssetOptions,
+  SignAssetResult,
 } from './manifest.types.js';
 
 // Request types
@@ -29,5 +23,5 @@ export {
   InvalidUrlError,
   DownloadError,
   DownloadTimeoutError,
-  C2PToolError,
+  C2PANodeError,
 } from './errors.js';

@@ -4,7 +4,7 @@
  * MCP Content Credentials Server
  *
  * This server provides tools for reading Content Credentials from
- * images and media files using the c2patool command-line utility.
+ * images and media files using the c2pa-node library.
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -88,6 +88,32 @@ server.setRequestHandler(ListToolsRequestSchema, () => {
             },
           },
           required: ['url'],
+        },
+      },
+      {
+        name: 'sign_asset',
+        description:
+          'Sign an asset with C2PA Content Credentials. Creates a new file with embedded manifest. ' +
+          'Requires a manifest definition with claims and assertions. ' +
+          'Uses test signing credentials by default (FOR TESTING ONLY). ' +
+          'Example usage: "Sign the active file with a manifest that includes an edited action"',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            inputPath: {
+              type: 'string',
+              description: 'Absolute path to the input file to sign',
+            },
+            outputPath: {
+              type: 'string',
+              description: 'Optional output path (defaults to input-signed.ext)',
+            },
+            manifest: {
+              type: 'object',
+              description: 'C2PA manifest definition with claims and assertions',
+            },
+          },
+          required: ['inputPath', 'manifest'],
         },
       },
     ],
@@ -296,6 +322,39 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             {
               type: 'text',
               text: formatResult(result),
+            },
+          ],
+        };
+      }
+
+      case 'sign_asset': {
+        const params = args as Partial<{
+          inputPath: string;
+          outputPath?: string;
+          manifest: Record<string, unknown>;
+        }>;
+        
+        const { inputPath, outputPath, manifest } = params;
+
+        if (!inputPath) {
+          throw new Error('Missing required parameter: inputPath');
+        }
+        
+        if (!manifest) {
+          throw new Error('Missing required parameter: manifest');
+        }
+
+        logger.debug('Processing sign_asset', { inputPath, outputPath });
+        const result = await c2paService.signAsset(inputPath, {
+          ...(outputPath ? { outputPath } : {}),
+          manifest,
+        });
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
             },
           ],
         };

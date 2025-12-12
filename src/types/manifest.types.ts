@@ -3,90 +3,7 @@
  */
 
 /**
- * LinkedIn verified identity
- */
-export interface LinkedInIdentity {
-  name: string;
-  profileUrl: string;
-  verified: boolean;
-}
-
-/**
- * Creator/identity information
- */
-export interface CreatorIdentity {
-  name?: string;
-  identifier?: string;
-  socialAccounts?: string[];
-}
-
-/**
- * Who this comes from section
- */
-export interface WhoThisComesFrom {
-  linkedInIdentity?: LinkedInIdentity;
-  otherIdentities?: CreatorIdentity[];
-}
-
-/**
- * Action taken on the content
- */
-export interface ContentAction {
-  action: string;
-  softwareAgent?: string;
-  when?: string;
-  parameters?: Record<string, unknown>;
-}
-
-/**
- * About this content section
- */
-export interface AboutThisContent {
-  actions?: ContentAction[];
-  genAIInfo?: {
-    generative?: boolean;
-    training?: boolean;
-    model?: string;
-    version?: string;
-  };
-}
-
-/**
- * About these Content Credentials section
- */
-export interface AboutTheseCredentials {
-  claimSigner?: string;
-  timestamp?: string;
-  signedBy?: string;
-}
-
-/**
- * Validation information section
- */
-export interface ValidationInfo {
-  certificate?: {
-    issuer?: string;
-    subject?: string;
-    serialNumber?: string;
-    validFrom?: string;
-    validUntil?: string;
-  };
-  trustInfo?: string[];
-}
-
-/**
- * Structured manifest data with proper information hierarchy
- */
-export interface ParsedManifestData {
-  whoThisComesFrom?: WhoThisComesFrom;
-  aboutThisContent?: AboutThisContent;
-  aboutTheseCredentials?: AboutTheseCredentials;
-  validationInfo?: ValidationInfo;
-  rawManifest?: string;
-}
-
-/**
- * Enhanced C2PA result with parsed manifest data
+ * C2PA operation result with raw manifest JSON from c2pa-node
  */
 export interface C2PAResult {
   /** Whether the operation completed successfully */
@@ -95,21 +12,18 @@ export interface C2PAResult {
   /** Whether C2PA credentials were found in the file */
   hasCredentials: boolean;
 
-  /** Parsed manifest data with structured information */
-  manifestData?: ParsedManifestData;
+  /** Complete C2PA manifest JSON */
+  manifest?: Record<string, unknown>;
 
   /** TrustMark watermark data if detected */
   trustMarkData?: TrustMarkWatermarkData;
 
   /** Error message if operation failed */
   error?: string;
-
-  /** Raw output from c2patool for debugging */
-  rawOutput?: string;
 }
 
 /**
- * Original C2PA manifest type (kept for compatibility)
+ * C2PA manifest type
  */
 export type C2PAManifest = string | Record<string, unknown>;
 
@@ -146,3 +60,40 @@ export interface TrustMarkResult {
   /** Error message if detection failed */
   error?: string;
 }
+
+/**
+ * Options for signing an asset
+ */
+export interface SignAssetOptions {
+  /** Optional output path (defaults to input-signed.ext) */
+  outputPath?: string;
+  
+  /** Custom manifest definition (required for now) */
+  manifest: Record<string, unknown>;
+  
+  /** Optional signing credentials (uses test certs if not provided) */
+  signingCert?: string;
+  privateKey?: string;
+  tsaUrl?: string;
+}
+
+/**
+ * Result of signing an asset
+ */
+export interface SignAssetResult {
+  /** Whether signing completed successfully */
+  success: boolean;
+  
+  /** Path to the input file */
+  inputPath: string;
+  
+  /** Path to the signed output file */
+  outputPath: string;
+  
+  /** The manifest that was signed */
+  manifest?: Record<string, unknown>;
+  
+  /** Error message if signing failed */
+  error?: string;
+}
+

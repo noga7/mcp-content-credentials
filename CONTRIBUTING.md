@@ -7,7 +7,7 @@ Thank you for your interest in contributing! This guide will help you get starte
 1. **Prerequisites**
    - Node.js 18 or higher
    - npm or yarn
-   - c2patool CLI tool installed
+   - Python 3.8.5+ (for TrustMark)
 
 2. **Clone and Install**
    ```bash
@@ -182,7 +182,7 @@ logger.error('Operation failed', error, { attemptNumber, timeElapsed });
 When tests are added:
 - Write unit tests for pure business logic
 - Write integration tests for service layer
-- Mock external dependencies (file system, network, c2patool)
+- Mock external dependencies (file system, network, c2pa-node)
 - Aim for >80% code coverage
 
 ## Code Review Checklist
@@ -230,7 +230,7 @@ Use clear, descriptive commit messages:
 feat: add support for video file credentials
 
 Add support for reading C2PA credentials from video files.
-Updates c2patool execution to handle video formats.
+Updates c2pa-node to handle video formats.
 
 Closes #123
 ```

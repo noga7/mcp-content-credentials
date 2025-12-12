@@ -21,7 +21,7 @@ MCP (Model Context Protocol) server for reading C2PA Content Credentials from im
 git clone https://github.com/noga7/mcp-content-credentials.git
 cd mcp-content-credentials
 
-# 2. Install (automatic: installs c2patool + TrustMark)
+# 2. Install (automatic: installs TrustMark)
 npm install
 
 # 3. Build
@@ -65,22 +65,37 @@ curl "http://localhost:3000/verify-url?url=https://example.com/image.jpg"
 ## Prerequisites
 
 - **Node.js** v18+
-- **Python 3.8.5+** (for TrustMark watermarks)
+- **Python 3.11+** (for TrustMark watermark detection)
 
 **All other dependencies auto-install during `npm install`:**
-- ✅ c2patool (Homebrew on macOS, binary on Linux)
-- ✅ TrustMark Python package (via pip)
+- ✅ @contentauth/c2pa-node v0.4.0 (native Node.js library)
+- ✅ Content Credentials Verify trust list (automatic)
 
-### Manual Installation (if auto-install fails)
+### TrustMark Watermark Detection Setup
+
+TrustMark watermark detection requires Python 3.11+ with the `trustmark` package. This allows detection of credentials embedded in image pixels (survives screenshots, social media uploads, etc.).
+
+**Install TrustMark:**
 
 ```bash
-# c2patool
-brew install contentauth/tools/c2patool  # macOS
+# Using Python 3.11 (required)
+python3.11 -m pip install trustmark Pillow
 
-# TrustMark
+# Or with pip3 (if python3 is aliased to 3.11+)
 pip3 install trustmark Pillow
+```
 
-# Or retry auto-install
+**Note:** The service uses `python3.11` command explicitly. If you have Python 3.11+ installed under a different name, you'll need to create a symlink or update [src/trustmark-service.ts](src/trustmark-service.ts#L88).
+
+**Verify installation:**
+
+```bash
+python3.11 -c "import trustmark; print('TrustMark ready!')"
+```
+
+**If auto-install fails, retry manually:**
+
+```bash
 npm run install-deps
 ```
 
@@ -113,15 +128,17 @@ npm run install-deps
 ### Detection Flow
 
 ```
-1. Check Embedded C2PA Manifest (fast: ~150ms)
+1. Load Trust Configuration (on startup)
    ↓
-   Found? → Return immediately ✅
+2. Check Embedded C2PA Manifest (fast: ~50ms)
    ↓
-2. Check TrustMark Watermark (slower: ~600ms)
+   Found? → Validate & Return immediately ✅
+   ↓
+3. Check TrustMark Watermark (slower: ~600ms)
    ↓
    Found? → Return watermark data ✅
    ↓
-3. Neither found → "No Content Credentials found" ❌
+4. Neither found → "No Content Credentials found" ❌
 ```
 
 ### Why This Order?
@@ -129,6 +146,14 @@ npm run install-deps
 - **Performance**: 80% of credentialed images have embedded manifests
 - **Speed**: Skip expensive watermark check when not needed
 - **Completeness**: Still catch stripped metadata via watermarks
+
+### Trust Configuration
+
+Automatically loads the Content Credentials Verify trust list on startup:
+- ✅ Trust anchors from contentcredentials.org
+- ✅ Allowed certificate list (SHA-256 hashes)
+- ✅ Extended Key Usage (EKU) configuration
+- ✅ Same defaults as c2patool for consistent validation
 
 ### TrustMark Watermarks
 
@@ -150,18 +175,29 @@ Invisible watermarks embedded in image pixels that:
   success: boolean;
   hasCredentials: boolean;
   
-  // Embedded C2PA data
-  manifestData?: {
-    whoThisComesFrom?: {
-      linkedInIdentity?: { name, profileUrl, verified }
-      otherIdentities?: [{ name, socialAccounts }]
+  // Complete C2PA manifest
+  manifest?: {
+    active_manifest: string;
+    manifests: {
+      [key: string]: {
+        claim_generator: string;
+        signature_info: {
+          issuer: string;
+          time: string;
+          cert_serial_number: string;
+        };
+        assertions: Array<{
+          label: string;
+          data: Record<string, unknown>;
+        }>;
+        ingredients: Array<unknown>;
+      };
     };
-    aboutThisContent?: {
-      actions?: [{ action, softwareAgent, when }]
-      genAIInfo?: { generative, training, model }
-    };
-    aboutTheseCredentials?: { claimSigner, timestamp };
-    validationInfo?: { certificate, trustInfo };
+    validation_status: Array<{
+      code: string;
+      url: string;
+      explanation: string;
+    }>;
   };
   
   // Watermark data (if no embedded found)
@@ -221,14 +257,6 @@ mcp-content-credentials/
 2. **Use absolute paths**: `/Users/you/...` not `~/...`
 3. **Verify MCP is connected**: Ask "What tools do you have?"
 
-### "c2patool: command not found"
-
-```bash
-brew install contentauth/tools/c2patool  # macOS
-# or
-npm run install-deps
-```
-
 ### "Python or TrustMark not found"
 
 ```bash
@@ -246,7 +274,8 @@ This is normal! The file either:
 
 ## Performance
 
-- **Embedded check**: ~150ms (fast path, 80% of cases)
+- **Trust config load**: ~500ms (on startup, one-time)
+- **Embedded check**: ~50ms (fast path, 80% of cases)
 - **+ Watermark check**: ~600ms (fallback, 20% of cases)
 - **First watermark**: ~30s (downloads ONNX model, one-time)
 
@@ -265,8 +294,9 @@ See [CONTRIBUTING.md](CONTRIBUTING.md)
 ## Resources
 
 - [C2PA Specification](https://c2pa.org/specifications/)
-- [c2patool](https://github.com/contentauth/c2pa-rs)
+- [c2pa-node v2](https://github.com/contentauth/c2pa-node-v2)
 - [TrustMark](https://opensource.contentauthenticity.org/docs/trustmark/)
+- [Content Credentials Verify](https://contentcredentials.org/verify)
 - [MCP Protocol](https://modelcontextprotocol.io)
 
 ## License

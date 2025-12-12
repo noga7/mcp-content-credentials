@@ -89,11 +89,20 @@ curl "http://localhost:3000/verify-url?url=https://example.com/image.jpg"
 {
   "success": true,
   "hasCredentials": true,
-  "manifestData": {
-    "whoThisComesFrom": { ... },
-    "aboutThisContent": { ... },
-    "aboutTheseCredentials": { ... },
-    "validationInfo": { ... }
+  "manifest": {
+    "active_manifest": "manifest-1",
+    "manifests": {
+      "manifest-1": {
+        "claim_generator": "Adobe Firefly/1.0.0",
+        "signature_info": {
+          "issuer": "Adobe Inc.",
+          "time": "2024-12-11T10:00:00Z"
+        },
+        "assertions": [...],
+        "ingredients": [...]
+      }
+    },
+    "validation_status": [...]
   }
 }
 ```
@@ -159,47 +168,46 @@ ngrok will give you a public URL like `https://abc123.ngrok.io`. Use this URL in
 {
   "success": true,
   "hasCredentials": true,
-  "manifestData": {
-    "whoThisComesFrom": {
-      "linkedInIdentity": {
-        "name": "John Doe",
-        "profileUrl": "https://linkedin.com/in/johndoe",
-        "verified": true
-      },
-      "otherIdentities": [
-        {
-          "name": "Adobe Firefly",
-          "socialAccounts": ["@adobe"]
-        }
-      ]
-    },
-    "aboutThisContent": {
-      "actions": [
-        {
-          "action": "c2pa.created",
-          "softwareAgent": "Adobe Firefly",
-          "when": "2024-12-11T10:00:00Z"
-        }
-      ],
-      "genAIInfo": {
-        "generative": true,
-        "training": false,
-        "model": "Adobe Firefly Image 3"
+  "manifest": {
+    "active_manifest": "urn:uuid:...",
+    "manifests": {
+      "urn:uuid:...": {
+        "claim_generator": "Adobe Firefly/1.0.0",
+        "claim_generator_info": [
+          {
+            "name": "Adobe Firefly",
+            "version": "1.0.0"
+          }
+        ],
+        "signature_info": {
+          "issuer": "Adobe Inc.",
+          "time": "2024-12-11T10:00:00Z",
+          "cert_serial_number": "abc123"
+        },
+        "assertions": [
+          {
+            "label": "c2pa.actions",
+            "data": {
+              "actions": [
+                {
+                  "action": "c2pa.created",
+                  "softwareAgent": "Adobe Firefly",
+                  "when": "2024-12-11T10:00:00Z"
+                }
+              ]
+            }
+          }
+        ],
+        "ingredients": []
       }
     },
-    "aboutTheseCredentials": {
-      "claimSigner": "Adobe Inc.",
-      "timestamp": "2024-12-11T10:00:00Z"
-    },
-    "validationInfo": {
-      "certificate": {
-        "issuer": "ContentAuthenticity",
-        "serialNumber": "abc123"
-      },
-      "trustInfo": {
-        "isValid": true
+    "validation_status": [
+      {
+        "code": "signingCredential.trusted",
+        "url": "self#jumbf=c2pa/...",
+        "explanation": "Signing credential is trusted"
       }
-    }
+    ]
   }
 }
 ```
