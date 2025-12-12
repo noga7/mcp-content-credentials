@@ -65,20 +65,37 @@ curl "http://localhost:3000/verify-url?url=https://example.com/image.jpg"
 ## Prerequisites
 
 - **Node.js** v18+
-- **Python 3.8.5+** (for TrustMark watermarks)
+- **Python 3.11+** (for TrustMark watermark detection)
 
 **All other dependencies auto-install during `npm install`:**
 - ✅ @contentauth/c2pa-node v0.4.0 (native Node.js library)
-- ✅ TrustMark Python package (via pip)
 - ✅ Content Credentials Verify trust list (automatic)
 
-### Manual Installation (if auto-install fails)
+### TrustMark Watermark Detection Setup
+
+TrustMark watermark detection requires Python 3.11+ with the `trustmark` package. This allows detection of credentials embedded in image pixels (survives screenshots, social media uploads, etc.).
+
+**Install TrustMark:**
 
 ```bash
-# TrustMark
-pip3 install trustmark Pillow
+# Using Python 3.11 (required)
+python3.11 -m pip install trustmark Pillow
 
-# Or retry auto-install
+# Or with pip3 (if python3 is aliased to 3.11+)
+pip3 install trustmark Pillow
+```
+
+**Note:** The service uses `python3.11` command explicitly. If you have Python 3.11+ installed under a different name, you'll need to create a symlink or update [src/trustmark-service.ts](src/trustmark-service.ts#L88).
+
+**Verify installation:**
+
+```bash
+python3.11 -c "import trustmark; print('TrustMark ready!')"
+```
+
+**If auto-install fails, retry manually:**
+
+```bash
 npm run install-deps
 ```
 
@@ -158,18 +175,29 @@ Invisible watermarks embedded in image pixels that:
   success: boolean;
   hasCredentials: boolean;
   
-  // Embedded C2PA data
-  manifestData?: {
-    whoThisComesFrom?: {
-      linkedInIdentity?: { name, profileUrl, verified }
-      otherIdentities?: [{ name, socialAccounts }]
+  // Complete C2PA manifest
+  manifest?: {
+    active_manifest: string;
+    manifests: {
+      [key: string]: {
+        claim_generator: string;
+        signature_info: {
+          issuer: string;
+          time: string;
+          cert_serial_number: string;
+        };
+        assertions: Array<{
+          label: string;
+          data: Record<string, unknown>;
+        }>;
+        ingredients: Array<unknown>;
+      };
     };
-    aboutThisContent?: {
-      actions?: [{ action, softwareAgent, when }]
-      genAIInfo?: { generative, training, model }
-    };
-    aboutTheseCredentials?: { claimSigner, timestamp };
-    validationInfo?: { certificate, trustInfo };
+    validation_status: Array<{
+      code: string;
+      url: string;
+      explanation: string;
+    }>;
   };
   
   // Watermark data (if no embedded found)

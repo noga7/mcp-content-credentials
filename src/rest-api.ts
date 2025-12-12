@@ -127,37 +127,9 @@ app.get('/.well-known/openapi.json', (_req, res) => {
                         type: 'boolean',
                         description: 'Whether Content Credentials were found'
                       },
-                      manifestData: {
+                      manifest: {
                         type: 'object',
-                        description: 'Parsed Content Credentials data',
-                        properties: {
-                          whoThisComesFrom: {
-                            type: 'object',
-                            description: 'Identity information about the creator'
-                          },
-                          aboutThisContent: {
-                            type: 'object',
-                            description: 'Information about how the content was created',
-                            properties: {
-                              actions: {
-                                type: 'array',
-                                description: 'Actions taken on the content'
-                              },
-                              genAIInfo: {
-                                type: 'object',
-                                description: 'AI generation information'
-                              }
-                            }
-                          },
-                          aboutTheseCredentials: {
-                            type: 'object',
-                            description: 'Credential metadata'
-                          },
-                          validationInfo: {
-                            type: 'object',
-                            description: 'Certificate and validation details'
-                          }
-                        }
+                        description: 'Complete C2PA manifest with active_manifest, manifests, validation_status, etc.'
                       },
                       trustMarkData: {
                         type: 'object',
@@ -217,8 +189,9 @@ app.get('/.well-known/openapi.json', (_req, res) => {
                       hasCredentials: {
                         type: 'boolean'
                       },
-                      manifestData: {
-                        type: 'object'
+                      manifest: {
+                        type: 'object',
+                        description: 'Complete C2PA manifest'
                       },
                       error: {
                         type: 'string'

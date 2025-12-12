@@ -85,30 +85,26 @@ export class TrustMarkService {
     logger.debug('Executing TrustMark decoder script', { filePath, modelType: this.modelType });
 
     try {
-      const { stdout, stderr } = await execAsync(
-        `python3 "${SCRIPT_PATH}" "${filePath}" "${this.modelType}"`,
+      const result = await execAsync(
+        `python3.11 "${SCRIPT_PATH}" "${filePath}" "${this.modelType}" 2>/dev/null`,
         {
           maxBuffer: 1024 * 1024 * 10, // 10MB buffer
         }
       );
 
-      if (stderr) {
-        logger.warn('TrustMark decoder stderr', { stderr });
-      }
-
-      // Parse JSON output from Python script
-      const result = JSON.parse(stdout.trim()) as {
+      // Parse JSON output from Python script (from stdout)
+      const parsed = JSON.parse(result.stdout.trim()) as {
         success: boolean;
         hasWatermark: boolean;
         watermarkData?: TrustMarkResult['watermarkData'];
         error?: string;
       };
 
-      if (!result.success) {
-        throw new Error(result.error ?? 'TrustMark decoder failed');
+      if (!parsed.success) {
+        throw new Error(parsed.error ?? 'TrustMark decoder failed');
       }
 
-      return result as TrustMarkResult;
+      return parsed as TrustMarkResult;
     } catch (error: unknown) {
       // Handle Python/script not found
       if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {

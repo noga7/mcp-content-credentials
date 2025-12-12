@@ -111,6 +111,11 @@ export class C2PAService {
         mimeType: this.getMimeType(filePath)
       });
 
+      // If no reader returned, no credentials found
+      if (!reader) {
+        return { stdout: '', stderr: 'No manifest found' };
+      }
+
       // Get detailed JSON via reader.json() (synchronous method)
       const manifest = (reader as { json: () => unknown }).json();
 
