@@ -9,6 +9,8 @@ export type {
   C2PAManifest,
   TrustMarkWatermarkData,
   TrustMarkResult,
+  SignAssetOptions,
+  SignAssetResult,
 } from './manifest.types.js';
 
 // Request types

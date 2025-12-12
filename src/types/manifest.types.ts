@@ -61,3 +61,39 @@ export interface TrustMarkResult {
   error?: string;
 }
 
+/**
+ * Options for signing an asset
+ */
+export interface SignAssetOptions {
+  /** Optional output path (defaults to input-signed.ext) */
+  outputPath?: string;
+  
+  /** Custom manifest definition (required for now) */
+  manifest: Record<string, unknown>;
+  
+  /** Optional signing credentials (uses test certs if not provided) */
+  signingCert?: string;
+  privateKey?: string;
+  tsaUrl?: string;
+}
+
+/**
+ * Result of signing an asset
+ */
+export interface SignAssetResult {
+  /** Whether signing completed successfully */
+  success: boolean;
+  
+  /** Path to the input file */
+  inputPath: string;
+  
+  /** Path to the signed output file */
+  outputPath: string;
+  
+  /** The manifest that was signed */
+  manifest?: Record<string, unknown>;
+  
+  /** Error message if signing failed */
+  error?: string;
+}
+
