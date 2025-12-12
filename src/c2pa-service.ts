@@ -20,6 +20,29 @@ const VERIFY_TRUST_ANCHORS = 'https://contentcredentials.org/trust/anchors.pem';
 const VERIFY_ALLOWED_LIST = 'https://contentcredentials.org/trust/allowed.sha256.txt';
 const VERIFY_TRUST_CONFIG = 'https://contentcredentials.org/trust/store.cfg';
 
+// Cache c2pa-node module at module level for performance
+let c2paNodeModule: any = null;
+const getC2PANode = async () => {
+  if (!c2paNodeModule) {
+    c2paNodeModule = await import('@contentauth/c2pa-node');
+  }
+  return c2paNodeModule;
+};
+
+// MIME type lookup table - at module level to avoid recreating
+const MIME_TYPES: Record<string, string> = {
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  gif: 'image/gif',
+  webp: 'image/webp',
+  svg: 'image/svg+xml',
+  mp4: 'video/mp4',
+  mov: 'video/quicktime',
+  avi: 'video/x-msvideo',
+  pdf: 'application/pdf',
+};
+
 /**
  * C2PA Service - Core business logic for credential operations
  */
@@ -48,7 +71,7 @@ export class C2PAService {
   private async initializeTrustConfig(): Promise<void> {
     try {
       logger.info('Loading Content Credentials Verify trust configuration...');
-      const { loadTrustConfig, loadVerifyConfig } = await import('@contentauth/c2pa-node');
+      const { loadTrustConfig, loadVerifyConfig } = await getC2PANode();
 
       // Fetch trust list files
       const [trustAnchors, allowedList, trustConfig] = await Promise.all([
@@ -93,20 +116,14 @@ export class C2PAService {
     logger.debug('Reading C2PA manifest via c2pa-node', { filePath });
 
     try {
-      // Dynamically import c2pa-node and use the v2 Reader.json() API
-      const c2pa: unknown = await import('@contentauth/c2pa-node');
+      // Use cached c2pa-node module
+      const c2pa = await getC2PANode();
+      const { Reader } = c2pa;
 
-      // Resolve Reader
-      const mod = c2pa as Record<string, unknown>;
-      const Reader = mod['Reader'] as Record<string, unknown> | undefined;
       if (!Reader) throw new Error('c2pa-node Reader class not found');
 
-      // Create reader from file using fromAsset with FileAsset structure
-      const fromAsset = Reader['fromAsset'];
-      if (typeof fromAsset !== 'function') {
-        throw new Error('c2pa-node Reader.fromAsset not found');
-      }
-      const reader = await (fromAsset as (asset: { path: string; mimeType?: string }) => Promise<unknown>)({
+      // Create reader from file
+      const reader = await Reader.fromAsset({
         path: filePath,
         mimeType: this.getMimeType(filePath)
       });
@@ -116,8 +133,8 @@ export class C2PAService {
         return { stdout: '', stderr: 'No manifest found' };
       }
 
-      // Get detailed JSON via reader.json() (synchronous method)
-      const manifest = (reader as { json: () => unknown }).json();
+      // Get detailed JSON via reader.json()
+      const manifest = reader.json();
 
       if (!manifest) {
         // Mirror prior behavior for "no credentials"
@@ -140,19 +157,7 @@ export class C2PAService {
    */
   private getMimeType(filePath: string): string {
     const ext = filePath.toLowerCase().split('.').pop();
-    const mimeTypes: Record<string, string> = {
-      jpg: 'image/jpeg',
-      jpeg: 'image/jpeg',
-      png: 'image/png',
-      gif: 'image/gif',
-      webp: 'image/webp',
-      svg: 'image/svg+xml',
-      mp4: 'video/mp4',
-      mov: 'video/quicktime',
-      avi: 'video/x-msvideo',
-      pdf: 'application/pdf',
-    };
-    return mimeTypes[ext || ''] || 'application/octet-stream';
+    return MIME_TYPES[ext || ''] || 'application/octet-stream';
   }
 
   /**
